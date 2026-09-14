@@ -2,6 +2,8 @@
   <img src="docs/assets/app-icon.png" width="112" height="112" alt="olcOS" />
   <h1>olcOS</h1>
   <p>iOS 17+ · SwiftUI · WebRTC · VPN / SOCKS5</p>
+  <p><strong>Beta</strong> · Функции и совместимость могут меняться.</p>
+  <p><strong>Beta</strong> · Features and compatibility may change.</p>
   <p><strong>1.0 (1)</strong> · <code>v1.0.1</code></p>
   <br />
   <h2><a href="README.ru.md">Русский</a> &nbsp; / &nbsp; <a href="README.en.md">English</a></h2>
