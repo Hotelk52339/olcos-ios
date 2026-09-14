@@ -1,0 +1,4 @@
+/* #485: Native extension errors use this target's resource bundle; app L10n
+   cannot be linked here without importing the main app's stores/UI. */
+"vpn.startRequiresApp" = "Open OlcRTC and connect from the app to restore the VPN credentials.";
+"vpn.unsupportedDNS" = "VPN mode needs an IPv4 DNS server on port 53. Open the app and choose a compatible DNS resolver in Settings.";

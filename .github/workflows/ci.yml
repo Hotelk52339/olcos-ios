@@ -1,0 +1,35 @@
+name: olcOS CI
+
+on:
+  push:
+    branches: [main, master, 'release/olcos-*']
+    paths-ignore: ['**/*.md', 'docs/**', LICENSE]
+  pull_request:
+    paths-ignore: ['**/*.md', 'docs/**', LICENSE]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: olcos-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Test and unsigned device build
+    uses: ./.github/workflows/build.yml
+
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: SwiftLint
+        run: |
+          command -v swiftlint || brew install swiftlint
+          swiftlint version
+          swiftlint lint --reporter github-actions-logging

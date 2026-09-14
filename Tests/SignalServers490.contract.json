@@ -1,0 +1,5679 @@
+{
+  "task": "#490",
+  "baseline": "/home/user/workspace/olcrtc-patch-verification",
+  "baseline_note": "Frozen actual file contents including uncommitted prior audit/Signal, not git HEAD. Declarations token-hashed excluding comments/whitespace. Presentation exceptions enumerated explicitly.",
+  "files": [
+    "ServersView",
+    "ServerCardView",
+    "ProtocolRowView",
+    "ServerAdvancedView",
+    "AddServerHostView",
+    "InstallOptionsView",
+    "ReconfigureOptionsView",
+    "TelemostRoomButton"
+  ],
+  "file_sha256": {
+    "ServersView": "194a9f16ce501fffb4d1829e7a3612449f19c69b0e1fd757dd29f8abeb8b48a7",
+    "ServerCardView": "c745455f8ed232d561ec300c0a08ad4d7fef4427c2ad3364eb781e66dce08ff8",
+    "ProtocolRowView": "acc532fd03a741e5cdfe1766a2077735416ea361c2c37e6b59b7c56ac0e19ba8",
+    "ServerAdvancedView": "7d1e9c56137b2c58d820e897b3b36c3fe143a04de512a64b3da1865f131e5847",
+    "AddServerHostView": "31449522147dd05c3f3ae1315aea6d9e78c1582dd9b11e4a5c4f768da0b20ef7",
+    "InstallOptionsView": "e9ba27ce996a85f25dc20c51c9a4ad9f11c1dc607a6abb02b6b389f250329a2a",
+    "ReconfigureOptionsView": "20038fa2d90c5916513425018cde5d7a220726c82d57b7a33aae7a9d5636af5c",
+    "TelemostRoomButton": "42646577bbc4bf575ab3623267beefc74acd245cf4976a582b3c0d8d6c397457"
+  },
+  "declarations": {
+    "ServersView": [
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "coreStack",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "44cbb7240015f9cee415d4e406a26a46428bb0e0483f8e4f2a6b81c1987e8f4c"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "hostList",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "7da04b24b8e60db8e68505cb1d9ecdbf66f2060e170531609b2eba38bfba29be"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "hostDestinations",
+          "(",
+          "_",
+          "content",
+          ":",
+          "some",
+          "View",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "97938448a5133aa0874bc46c21e5bdf31f619d927242f2cd6ec93948d1ae9f18"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "listChrome",
+          "(",
+          "_",
+          "content",
+          ":",
+          "some",
+          "View",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "3f869c17682d28c489976260d1d7bb286a35085f2a4b27dd8e90b11a8773f8c6"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "listBars",
+          "(",
+          "_",
+          "content",
+          ":",
+          "some",
+          "View",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "76f672a90290a93c22620cc8a2e19a9cda49044d8dc4fc7321ac805945b1bc03"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "hostSheets",
+          "(",
+          "_",
+          "content",
+          ":",
+          "some",
+          "View",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "a142565433bb7f772ed52b447a5523356596435b5443979743246eb102a28652"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "hostConfirmations",
+          "(",
+          "_",
+          "content",
+          ":",
+          "some",
+          "View",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "dd8ff5321bf43a135efe5bbc2963952da09e857d32c545b26102fde57f50e1c5"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "376136e4a605675a988e7990f0794e922ca3b9bdf38aafdc4a70ac9dfaefc29a"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "carrierModals",
+          "(",
+          "_",
+          "content",
+          ":",
+          "some",
+          "View",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "f17ff6903d2bdc3ce7c7bdca2a2770c1db4e0c7764c37ef58a26d1b27f056a76"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "removeFromList",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "31d519d52d5aa3565b900362ca8454fa1436f6bab0f0796370baa6bfed2bb668"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "emptyState",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "ddc88517f729b7600ccf45ccbb77f94755a7173219025d8cd358676a8380108d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "displayState",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "HostDisplay"
+        ],
+        "mode": "unchanged",
+        "sha256": "8d19bded0be03fb84694ad121d667f1865448ed36328a7aa7b563d54ff05990d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "currentBase",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "HostBase"
+        ],
+        "mode": "unchanged",
+        "sha256": "d62de6e9c7121f020bcea6e2ef40d4799497a376a74f6c09ad9bb42bc31cca19"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "hasContainer",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "19bfc6b36a914aee8a14534a540bae0bc676ba64c4fa2f45a5a13b4e529a0c35"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "hostRecords",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "[",
+          "ConnectionRecord",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "40717935cddd86896a6a2f788a2728c184337de88a619528fbea60eda5d5ea3d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "hostHealth",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "HealthDisplay"
+        ],
+        "mode": "unchanged",
+        "sha256": "61b0f279f1821dd63b9338a118f19b3b64da10438e7ca777def46f0d6771cbd8"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "rowHealth",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "HealthDisplay"
+        ],
+        "mode": "unchanged",
+        "sha256": "4c508f9fc2bc8ad0d588f068fa141f58e87b517c2a3a8da72834b964c04539b7"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "headline",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "state",
+          ":",
+          "HostDisplay",
+          ")",
+          "-",
+          ">",
+          "HostHeadline"
+        ],
+        "mode": "unchanged",
+        "sha256": "65a49cab10732b7fa2fd311d2e8f393bf3b6721e6e61b7959114a7ecb3e9a030"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "verifiedTally",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "(",
+          "verified",
+          ":",
+          "Int",
+          ",",
+          "total",
+          ":",
+          "Int",
+          ",",
+          "age",
+          ":",
+          "TimeInterval",
+          "?",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "1ce614fb7a114efb4258efc6bbc6be51fad24f175aaafd8587fca90046018707"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "linkedConnection",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "ConnectionRecord",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "9ff4a59dd5e21b9971c61fade28f10ce24da2f1ae5689be5aa341c6a65b30e72"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "fullAccessRequest",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "conn",
+          ":",
+          "ConnectionRecord",
+          ")",
+          "-",
+          ">",
+          "FullAccessShareRequest",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "d5c6fd84753395180410cf8ce065545fef1a5da972982d661a579653b11c2b74"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "anyBusy",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "8fa37f2aaa7cd8449758959503eab559cc0a1d7d43372d44c2f2992045021ca2"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "actionsDisabled",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "50fd0707fe4097638b421536b1277914be680105948364609b88465c3604f0e7"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "runningHostID",
+          ":",
+          "UUID",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "62a611009994f6a15014f58dccadb2e181233917062dba81dad5cbd91d32d7d5"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "run",
+          "(",
+          "_",
+          "op",
+          ":",
+          "HostOp",
+          ",",
+          "on",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "_",
+          "work",
+          ":",
+          "@",
+          "escaping",
+          "(",
+          "_",
+          "secret",
+          ":",
+          "SSHSecret",
+          ")",
+          "async",
+          "throws",
+          "-",
+          ">",
+          "HostBase",
+          "?",
+          ")",
+          "async"
+        ],
+        "mode": "motion-only",
+        "sha256": "060b4d5ead6e5a99fec08d5cf4889858684d41aa1a925278cb3ab508bd6d9c83"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "advancePhase",
+          "(",
+          "note",
+          ":",
+          "String",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "86f99eb5189ee9bc119199735e52099e1535ce8fa02ac950547b8de79bfeb92b"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "retry",
+          "(",
+          "_",
+          "op",
+          ":",
+          "HostOp",
+          ",",
+          "on",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "577b6a27fa545631be0b12f63af255ce5714c095c0badd814de3125f6fa4930e"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "autoPingOnce",
+          "(",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "4937fc95f466b7d6c0e0ea9e8d1ea53646589b475d261862c27f6f52e843cfa8"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "nonisolated",
+          "static",
+          "func",
+          "neverProbedHosts",
+          "(",
+          "_",
+          "hosts",
+          ":",
+          "[",
+          "ServerHost",
+          "]",
+          ",",
+          "lastProbe",
+          ":",
+          "[",
+          "UUID",
+          ":",
+          "Date",
+          "]",
+          ")",
+          "-",
+          ">",
+          "[",
+          "ServerHost",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "67e0fa97949187aab8a641290f46ffffb827b99b31bc3805f684fec037cd05b8"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "checkNeverProbedHosts",
+          "(",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "83b9627e4535d084358ed422bbbdba563b518deb9b8b2602457408fb48d5acab"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "pingNeverPingedHosts",
+          "(",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "79817c4c55982a7d8ad3ba3970872e84281136a9ed019b20c18d4ee3bdfb83ca"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "doPing",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "7131ff95748d9420ae2b25d059de7b0f4855787511f079af22b9896d28fab5b4"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "hostCard",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "c16610bb86f66974e004957a7dd784de2967afb673d1072bf2cf04106b7be4f9"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "serverCard",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "ServerCardView"
+        ],
+        "mode": "presentation",
+        "sha256": "e43b7f0e54dd74136e34664355b05eeb2289d30f85b185bc7fc058dfe5ffbb59"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "advancedView",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "ServerAdvancedView"
+        ],
+        "mode": "presentation",
+        "sha256": "5d2f6cc7ffacaff177b9a4d671421ea92366e6ea23c6e922b47636e6bc779555"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "presentFullAccessShare",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "a92dd17a6154496f619245ab9f1f8f0fa403bcd6f88a9f03d0dbadd8320e430d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "addressLine",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "f58ad3eac09dee5c842c134b4161c487dc313ea4b8c8f0e9f2a5f689b923f4a5"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "rowView",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "ProtocolRowView"
+        ],
+        "mode": "presentation",
+        "sha256": "38d4cf7f63ff5b5b6b3f885d40906478129fe3987ab1b98a197d85b9f17f67e4"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "isUp",
+          "(",
+          "_",
+          "status",
+          ":",
+          "ContainerStatus",
+          ")",
+          "-",
+          ">",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "d0bec5cc1272889f5ae8325586a2f5344809955563cb6f1481537eb61dec2e96"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "scanGlyph",
+          "(",
+          "_",
+          "status",
+          ":",
+          "ContainerStatus",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "385206ce0e2d686c5223782e69cfc927a8698f6fbf65009d17aca5a445461c35"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "primaryAction",
+          "(",
+          "_",
+          "state",
+          ":",
+          "HostDisplay",
+          ")",
+          "-",
+          ">",
+          "ServerPrimaryAction"
+        ],
+        "mode": "unchanged",
+        "sha256": "c4eb5020feb959b74628065de92d424efd818725092871ef768a6eff172f83fb"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "runPrimary",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "state",
+          ":",
+          "HostDisplay",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "3280914565eab1dba15cfaf7ed719f4d101cdeb6de4a45089a2bd6b42a40f690"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "readCaptionText",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "6c0f872371024256396be2719b9cc979a5b3d101d7ab5eecfb28290fdf19ee0f"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "statusBarFraction",
+          "(",
+          "_",
+          "state",
+          ":",
+          "HostDisplay",
+          ")",
+          "-",
+          ">",
+          "Double",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "7b218e185fce886bbf4c0662fa40cbf1bdfe0c799fc4d0c2ce44e152c04d9386"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "machineStats",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "ServerMachineStats"
+        ],
+        "mode": "unchanged",
+        "sha256": "bef9d92bb0d5e9d2e57cb628c37f9be8d0d71bd91b3a2b41fbe6687716b7d273"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "machineLine",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "17e92cdcb54721e8728ec4d7083174808ee9a2216249fe8f25f632028fe0ff04"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "pingValue",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "91b798effb636363cacd65db15a36623712f7b4f9173fcfdd1f9939a47170e52"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "pingTone",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "Color"
+        ],
+        "mode": "unchanged",
+        "sha256": "768c0ce8d1c57fdd04ba6c055737df2c20fd4ebfe8846c930161ab8700297c8e"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "shortUsage",
+          "(",
+          "_",
+          "s",
+          ":",
+          "String",
+          "?",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "c52b9d1d3624b22ee2410b3bd6d71a039837b85d9f5f61069dd5acb8b96acb97"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "shortRAM",
+          "(",
+          "_",
+          "s",
+          ":",
+          "String",
+          "?",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "fccff71ddadeb268b6387b2f465a42df14df9d9ec506e79b2c9632306f02f7dd"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "shortUptime",
+          "(",
+          "_",
+          "s",
+          ":",
+          "String",
+          "?",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "64e568d88d8ce9d1297992a978dd837b4eaa01c88439219f15fe5733c5cc360d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "menuItems",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "[",
+          "OlcMenuItem",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "120447c05ec61b03424aeba317f2a226d2d556d06eb8b71146261b6cd74918af"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "secret",
+          "(",
+          "for",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "SSHSecret",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "0698c6208bccf65833eb890e1c7b063ecc298edab66ad30d4bceef80b17c8f29"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "missingCredentialMessage",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "eaf59fa04f787a1c82dde3d398494a7c461b486322a42fa848ca3a78eba590ba"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "pruneDanglingLinks",
+          "(",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "b250ac29f48ee608b263163b28bf2fc1906956518123c2c0f7c1dde9e4cfd98b"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "refreshOnEntry",
+          "(",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "a7f2fd1618ebe2181eb485c18fe93c86b1c92e78fca7f8b6ac4ba6f0be581f73"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "refreshAllHosts",
+          "(",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "9e18836d643d8b9bca56b29adc26486350076a6ce807ef198c79607bf482fb55"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "silentProbe",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "52a130dcc73ae84214d15645d3c97541db5c13b298f16b10841041f5a3b88ed3"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "adoptOrphanContainer",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "secret",
+          ":",
+          "SSHSecret",
+          ",",
+          "base",
+          ":",
+          "HostBase",
+          ")",
+          "async",
+          "-",
+          ">",
+          "HostBase"
+        ],
+        "mode": "unchanged",
+        "sha256": "bfc21716be4ce8b6c650624c093a7f017c4d76e35df65d938cac9021387783dc"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "verifyRecord",
+          "(",
+          "_",
+          "id",
+          ":",
+          "UUID",
+          "?",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "878d8b10fc8313397c73022452f33fb100b75c7b1f9d4fd59610a73f4e22ee34"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "verifyLinked",
+          "(",
+          "_",
+          "hostID",
+          ":",
+          "UUID",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "a6a138b3bf126f0f819270e8da7f4d0163efdba1caf29f0186f20664424ee64d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "primaryRecordID",
+          "(",
+          "_",
+          "hostID",
+          ":",
+          "UUID",
+          ")",
+          "-",
+          ">",
+          "UUID",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "86d885b10951d11f638b18ac39b99710ff6abd787fc6af1d41d5d5eecb460262"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "rememberRoom",
+          "(",
+          "_",
+          "options",
+          ":",
+          "InstallOptions",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "6b83a1798a880342f221fa80f5d22e418984dd3ab3621128c757108215ddfcec"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "checkServer",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "8fe4646fefdcf4da369a9f4eb3ba311c01baa1d695e03e4a17b33e902c7b7163"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "beginInstall",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "67f7bd2677ee92f3a12d00223d0a00159a72e0cfd1929b21e245c43c6ae204e0"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "adoptExisting",
+          "(",
+          "_",
+          "req",
+          ":",
+          "InstallChoiceRequest",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "2fc2a4e74ddf9e2fc972f8d1c049de3b65637927d4e3eb63d4c1608213b181c1"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "install",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "primary",
+          ":",
+          "InstallOptions",
+          ",",
+          "extras",
+          ":",
+          "[",
+          "InstallOptions",
+          "]",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "629800da07961fdb5d255bcb84d30875f292012e4e2ec5f8c0c6f052c542e123"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "uninstall",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "04316945bd7ac1fbe72ed80163b60828ce4019eb3cbeab95eb22d253882b9b63"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "update",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "0908eb50fb171f9d6bcd9841b629651992789d1214d36dd16a9644951c659fda"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "startContainer",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "1495778ea2deed2f7f8b166275779b4f286c608f517908c6e0a12e464b6dc789"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "stop",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "76e7a31d56c2f94501a3be6741b469580422b5ae52d76aacdb21ab23bbe66deb"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "deepUninstall",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "removeImage",
+          ":",
+          "Bool",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "cb7a082e735dab4415820cd850a7077abf6c7c5a0bf877805f1c5fc2585ec6f9"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "reboot",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "c2fe6caf6514c829874dddaee16eff41ab448bf0bbf647355a24ee0e41a9a2e3"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "reconfigure",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "containerName",
+          ":",
+          "String",
+          ",",
+          "recordID",
+          ":",
+          "UUID",
+          "?",
+          ",",
+          "options",
+          ":",
+          "InstallOptions",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "3af868a58af093a0e5b5878049e60b1a57ed24b35be0b5f5f59eace4399d43cf"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "missingCarriers",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "[",
+          "String",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "8255e142a45ca7ab76c37cab1d84762dcd28fbdebb29848a6b84b980832ab3b1"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "connectionRecord",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "ConnectionRecord",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "3cf7acda539fad95090802363eae94c0ab42db562f05cf7fc73fd280fec567c4"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "resolveRecord",
+          "(",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ",",
+          "records",
+          ":",
+          "[",
+          "ConnectionRecord",
+          "]",
+          ")",
+          "-",
+          ">",
+          "ConnectionRecord",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "259ecf4d1582fb214366464b4747ef7ec060c939be1e5a08f801fdfca64657e1"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "resolveSlotRecord",
+          "(",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "isPrimary",
+          ":",
+          "Bool",
+          ",",
+          "carrier",
+          ":",
+          "String",
+          ",",
+          "room",
+          ":",
+          "String",
+          ",",
+          "records",
+          ":",
+          "[",
+          "ConnectionRecord",
+          "]",
+          ")",
+          "-",
+          ">",
+          "ConnectionRecord",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "c6c984ac4017660eb8d414b8aa2f187283689f0be8fa40b774bd1d6faa095119"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "roomDrifted",
+          "(",
+          "_",
+          "record",
+          ":",
+          "ConnectionRecord",
+          "?",
+          ",",
+          "from",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "d1a0a7d3560cfb5c15651c2c5c0b584dd44401534a90ce65bdd21fbf867571d4"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "isLiveRow",
+          "(",
+          "_",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "9ac679594ceb64dcafb3e579e70f543af4adc138812e9accdf9d2248b73e244c"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "connectVia",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "c1dfafb932a30e5181e6b9f3c69cf1aa156515416b0cea5081a16ea323be7250"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "verifyRow",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "ea27bb8727cc6a239c0316ed3e1650d1e35bbf84ccd352696792c33e5cd0e1c6"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "carrierMenuItems",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "[",
+          "OlcMenuItem",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "8f8ab65b05e2b34d41cc8fb12447daa6c52f50a96afa3debbb5a3a4ec2f00602"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "recoverItem",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "OlcMenuItem"
+        ],
+        "mode": "unchanged",
+        "sha256": "a9d435410a2eacb99c73fb045f6aa9e5bec812635b1c4d7c9546f8482df50c8f"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "reconfigureItem",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "OlcMenuItem"
+        ],
+        "mode": "unchanged",
+        "sha256": "0da465d45fd532701e20e11299a1b5341fbb574b6906c9dd71147fd1a7d0b7a3"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "refreshCarriers",
+          "(",
+          "_",
+          "hostID",
+          ":",
+          "UUID",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "657b1efe2d4062c913774622ba6e21cec3b848440a2a97972dda0bf69ea3b187"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "addCarrier",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "options",
+          ":",
+          "InstallOptions",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "ecc7572fb63336809452212ea65ee4f35edf63d6a27da9004d0ecd0c46229962"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "removeCarrier",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "e5dd0ec73e219a3bf7b7c1769582c33b6bb84c01dd9e73074b8303f40a0e68c1"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "startCarrier",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "d9b96538281631eaabc850a0c30e699b359fd198203e096ad644cdac9fc58011"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "stopCarrier",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "c3626f202450cd98afe6fa8c40f11d91a393063c18399f84809cc0ab28b393ab"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "clearInstalledState",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "ServerHost"
+        ],
+        "mode": "unchanged",
+        "sha256": "e34cd09914c895d195fb0bfb94c947b3644cc8a137c5076224e712003b68ca3d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "static",
+          "func",
+          "recordName",
+          "(",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "carrier",
+          ":",
+          "String",
+          ",",
+          "multi",
+          ":",
+          "Bool",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "7fdb13a19f9ae29345e74c6156fd8ef567c6ce230d74399e94e0518f6f752f7a"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "upsertRecord",
+          "(",
+          "id",
+          ":",
+          "UUID",
+          "?",
+          ",",
+          "name",
+          ":",
+          "String",
+          ",",
+          "params",
+          ":",
+          "OlcrtcConnection",
+          ")",
+          "-",
+          ">",
+          "UUID"
+        ],
+        "mode": "unchanged",
+        "sha256": "c9faeb08fc4dfcdcadfb00349e5ca7856053967258c8856c8cfc2f9348a12310"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "recordCarrier",
+          "(",
+          "_",
+          "id",
+          ":",
+          "UUID",
+          ")",
+          "-",
+          ">",
+          "String",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "2409792c2b3d253de596982167c6e22d825b3546cb1006c6deee46b73887d2e1"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "forgetSupersededRecords",
+          "(",
+          "_",
+          "ids",
+          ":",
+          "[",
+          "UUID",
+          "]",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "7c0bf6fc159d046a131f88ad3bafbf464f7628737b1359991fd34a2760f9d8d0"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "recreateOptions",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "InstallOptions"
+        ],
+        "mode": "unchanged",
+        "sha256": "7640099fcb8fd41aceda6b8d06663d070544a3a97b38bf255f8d992a765e4b7a"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "primaryReconfigureRequest",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "ReconfigureRequest",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "aa6263bd72f00924afc122511d145d061b1cff3b0e272da758d3586aba16f5c5"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "rowReconfigureRequest",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "ReconfigureRequest"
+        ],
+        "mode": "unchanged",
+        "sha256": "06306e024b0ca7b6edd30003242f2cbf13d6e3b8123b4ee24ac1bdcecbd7abc2"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "static",
+          "func",
+          "wbToken",
+          "(",
+          "of",
+          "rec",
+          ":",
+          "ConnectionRecord",
+          "?",
+          ")",
+          "-",
+          ">",
+          "String",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "f02e600f8ed97a102aacbf2880aebc911ad5cd53ab9bc9c39d9dc91291249d04"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "static",
+          "func",
+          "jitsiBase",
+          "(",
+          "of",
+          "rec",
+          ":",
+          "ConnectionRecord",
+          "?",
+          ")",
+          "-",
+          ">",
+          "String",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "f4be44421d56416c620dfdca8d22f904a904e1ec5a4925ec917964d6790c99f7"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "beginTelemostRenew",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "row",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "d83ee34da89e2186452f5592b26fc63cc73b9242a71102f68ba6dfc39499d25d"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "var",
+          "telemostWorking",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "a61ac53750f188e0f785be99085509f7c5978a5f187092aa74d1e7954a5b96f6"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "telemostSheet",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ")",
+          "-",
+          ">",
+          "TelemostRoomSheet"
+        ],
+        "mode": "unchanged",
+        "sha256": "88ed865b021c45e0799dbe4b70a99308d9433c186a95e9878910c8fa36f7e631"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "telemostHazard",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ")",
+          "-",
+          ">",
+          "TelemostRenewHazard"
+        ],
+        "mode": "unchanged",
+        "sha256": "800fb124b11935c811d687997daf7e021d3422a011cd95e56a16021f793c1c38"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "alternativeCarrier",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ")",
+          "-",
+          ">",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "9b576accad12d337543aaf6741db580392bdbf6b1edfd331fea0411ea7c7d809"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "switchCarrierBeforeRenewal",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "e69c79616ab49b25c72b39e1eef2144cfec24fc063cda53f998665d0ed3693d5"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "renewTelemostRoom",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "f5b1e785773ab980b3321e142d9bf165c123f548730345d5b6e56bb1db4e9abf"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "reconfigureFailure",
+          "(",
+          "_",
+          "hostID",
+          ":",
+          "UUID",
+          ")",
+          "-",
+          ">",
+          "String",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "f64168cc3d53139f6b4cca038d506ea27268f6cff2fada371d8666eed344bea4"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "applyRoomLocally",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ",",
+          "room",
+          ":",
+          "String",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "6103a5c845251d9e675def5de31145159afeae496344e4e55114608c4158352a"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "reconnectAfterRenewal",
+          "(",
+          "_",
+          "req",
+          ":",
+          "TelemostRenewRequest",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "e3ddf68422cf77f80790883d9d8966291c073f0141c95e90fec7e63d19a7efff"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "adoptYandexSession",
+          "(",
+          "_",
+          "sessionID",
+          ":",
+          "String",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "24b060d56e8d06b62feae2ddabca395bbe5661eeffac986c713b3b157989aeaf"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "forgetYandexSession",
+          "(",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "b9550bf16579253118382f351a6fc9731813796b3c7673f28ab980f3476ff701"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "recoverConnection",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ",",
+          "containerName",
+          ":",
+          "String",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "configFile",
+          ":",
+          "String",
+          "=",
+          "\"server.yaml\"",
+          ",",
+          "asExtra",
+          ":",
+          "Bool",
+          "=",
+          "false",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "fed9dd776c0454cbcad97547165674a85f99de46e8dcae05ee8f337cb05c28f9"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "rotateKey",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "efb79ea860135484a060cbd409b18dad715dd3aa59915d9bbd8af72c0a80a294"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "scanContainers",
+          "(",
+          "_",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "3d6c2c89bdc72ef485f005293741b847c8eb64038f4d2773a60141364b4d3ff1"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "containerScanSheet",
+          "(",
+          "host",
+          ":",
+          "ServerHost",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "1509fbcda5d706cda6fd60117133bd9855cfa7af8df858a9e8601a312c6a8e28"
+      },
+      {
+        "owner": "ServersView",
+        "signature": [
+          "private",
+          "func",
+          "restoreContainer",
+          "(",
+          "_",
+          "container",
+          ":",
+          "SSHRunner",
+          ".",
+          "FoundContainer",
+          ",",
+          "on",
+          "host",
+          ":",
+          "ServerHost",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "72109909a3b5d4f6967b4425bb5d8410a04eb72b42d0ad8cfb106c169fd0c9be"
+      },
+      {
+        "owner": "ReconfigureRequest",
+        "signature": [
+          "var",
+          "id",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "9d87be667eb2d90e9c325b87371de0ae3d255864afc0b8c01648339843645b40"
+      },
+      {
+        "owner": "CarrierRemoveRequest",
+        "signature": [
+          "var",
+          "id",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "5ebfe89464e7d3357557f42fb4cf2a39c857caa270a6a2306995f57962787882"
+      },
+      {
+        "owner": "CarrierRecoverRequest",
+        "signature": [
+          "var",
+          "id",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "2787965e592341894755a510511696477c341c3381937dd6a08db8f96c64eda8"
+      },
+      {
+        "owner": "TelemostRenewRequest",
+        "signature": [
+          "var",
+          "id",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "5ebfe89464e7d3357557f42fb4cf2a39c857caa270a6a2306995f57962787882"
+      }
+    ],
+    "ServerCardView": [
+      {
+        "owner": "ServerPrimaryAction",
+        "signature": [
+          "var",
+          "isBusy",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "e1068ef1833f5a713724b9fff3a900922b840dea70694340e70376d38bb991e4"
+      },
+      {
+        "owner": "ServerPrimaryAction",
+        "signature": [
+          "var",
+          "title",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "754c4323a1d97259f4a55b97ff03a0d0b114f982a57d88d7d87410129a06a181"
+      },
+      {
+        "owner": "ServerPrimaryAction",
+        "signature": [
+          "var",
+          "systemImage",
+          ":",
+          "String",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "cb814d1e20d7dfe632ec6e273e9e9067b4b55984612b83bbdbae03cd06db651c"
+      },
+      {
+        "owner": "ServerPrimaryAction",
+        "signature": [
+          "var",
+          "role",
+          ":",
+          "OlcButton",
+          ".",
+          "Role"
+        ],
+        "mode": "unchanged",
+        "sha256": "8a894c9b7bb56410981cb326c668622f2836539c9572e51af0d959c0070d98f0"
+      },
+      {
+        "owner": "ServerQuickAction",
+        "signature": [
+          "var",
+          "id",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "fd6e46fb1d8f70b1e3fe657e1cc1ce8c7f9c44a310d3a3034b03547b3cac69d3"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "isBusy",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "6ae993e3378a84cd4531c32553b1a1ce2d99647e7156990915874ae0228911e7"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "d2e4e59c0eebe0e2b3cb7c91c6e56a311d45e4744e5bec1d98e39c41a8c860d6"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "header",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "8d815866f96fa2235d0ece8d1f86c43b78bba09a238772b75f722e5c0a02e6d2"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "machineCaption",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "cce3a3e5af00c9fd869cb305c64e6f884a33741657ed5e9d24498ba137944cb4"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "statusRegion",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "c766b5f789fad4ea0a17ab61893bff869da925bc2c00f936b94d51febd6ff275"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "protocolsSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "ef454c41d01c37679bbd3e1e47fe29bd0a06ac5b04243ddc2ee3b09eb7f3c876"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "protocolRow",
+          "(",
+          "_",
+          "info",
+          ":",
+          "SSHRunner",
+          ".",
+          "CarrierInfo",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "7310668e0be66350fe831bce1f3183034259eb0b127f381433201adb19aaadc8"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "protocolsHeader",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "9fdc65859c01176f5c8a680aff9ebb49441057300997fdcebea8f43deefd0845"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "addProtocolButton",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "c5ffbc30f98ba9bbdfdd99ff5788b470d53d7f2ac68804a45c318938c8090769"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "actions",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "568e84a31c5abbbc345e39cbe136986106a9e18c677ea624ea1dee44be7af588"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "manageRow",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "96141405b82cd59224585ae284c8536bd9210456c6ee22cdeaf90bb0dc512f38"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "logsButton",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "49145c374d4fbc8647f8ab8ea10bc7afbc85dca69369ce563be4e16423a9bbf8"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "var",
+          "manageButton",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "00a88bc3269281e75189d6b971d01d168d4c6e387d471e73d49ee5cdc71f8a5d"
+      },
+      {
+        "owner": "ServerCardView",
+        "signature": [
+          "private",
+          "func",
+          "linkButton",
+          "(",
+          "_",
+          "title",
+          ":",
+          "String",
+          ",",
+          "chevron",
+          ":",
+          "Bool",
+          ",",
+          "action",
+          ":",
+          "@",
+          "escaping",
+          "(",
+          ")",
+          "-",
+          ">",
+          "Void",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "708e474872f0623671d988914d5dbce40dd474730e6c48becee95b0418fb4457"
+      }
+    ],
+    "ProtocolRowView": [
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "69a9d8ec60012c3c0feaa1470d43cfe27ed8fe9445d4970b9279697b728d9b38"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "layout",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "daa544ea5b3ad8ae5b50c5aa6dd4aaf81852b72206e4968183ebc287f3e51f32"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "inline",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "6b65c5355373752c16238add43ccaf0b35b3991b3937f9b344eb3c39c0433cb3"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "stacked",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "1c7686fbfb61c04e652d489483971433dbde4bd3923fc211af1c04fd03cf6cd2"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "overflow",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "231b53d1863b14bd1a55dbe8b46a7427a0d3897a420f331398fbf194c207f20a"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "spine",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "9a520d1f7f78bb61526d8a76cea2aca0a8de3de2a63106bd1e4b75531a4bf5d4"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "spineStyle",
+          ":",
+          "AnyShapeStyle"
+        ],
+        "mode": "presentation",
+        "sha256": "7a42b12531465aa9d998ed47a3f4218561feacbef0cfd1bff2d5233b55ff21ce"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "labels",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "242fe7ebb090a07a34160cc07dd81616852dd10e8618998c9191800067042f9d"
+      },
+      {
+        "owner": "ProtocolRowView",
+        "signature": [
+          "private",
+          "var",
+          "subtitleText",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "e328d34d7e1817135879ba36c8fc71829783647326b11fd4f89f705a32db94d1"
+      }
+    ],
+    "ServerAdvancedView": [
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "336ee04e0fde46e89eb73153e7645041796c9c9385e1eefed7db02f733816911"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "private",
+          "var",
+          "machineSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "7a9388512ddc52db6b6fddf867e09a294472b0fc389224c09029a3b2147fe6c5"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "private",
+          "func",
+          "statRow",
+          "(",
+          "_",
+          "label",
+          ":",
+          "String",
+          ",",
+          "_",
+          "value",
+          ":",
+          "String",
+          ",",
+          "tone",
+          ":",
+          "Color",
+          "?",
+          "=",
+          "nil",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "43345307e659b290227ac89958da4f1d20a1c4dec8ef0d7e8c977f64efab5338"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "connectionSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "0a3351f49a225549599f1a4a78fb38a97a9fd7d1fe23377f2ac8b627e204566c"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "private",
+          "var",
+          "shareFullAccessRow",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "21e8c0b55ee1d1e2af7cfa638cd962ca8b334184605f674e96593fc82ac523bd"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "private",
+          "var",
+          "shareRole",
+          ":",
+          "ButtonRole",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "a0da2524d20e6111af2724bceb3cfafb490dd72bd9bc7defba36a41190b44ab4"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "maintenanceSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "0f36d6437c39dc192fbaa65503bd207f76b828553925822ea63b71bd1ee9dd2a"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "removeSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "8f723cbc84fa11f650cd65f505473b3b595a4ab578d3ff4deb2b33f9cff9240a"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "private",
+          "func",
+          "plainRow",
+          "(",
+          "_",
+          "title",
+          ":",
+          "String",
+          ",",
+          "systemImage",
+          ":",
+          "String",
+          ",",
+          "action",
+          ":",
+          "@",
+          "escaping",
+          "(",
+          ")",
+          "-",
+          ">",
+          "Void",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "3bf4347d50bccc17d7d0f03fab711c83de32f1c7ba1c90f8a79c3fc2b35efbf4"
+      },
+      {
+        "owner": "ServerAdvancedView",
+        "signature": [
+          "private",
+          "func",
+          "destructiveRow",
+          "(",
+          "_",
+          "title",
+          ":",
+          "String",
+          ",",
+          "systemImage",
+          ":",
+          "String",
+          ",",
+          "note",
+          ":",
+          "String",
+          ",",
+          "action",
+          ":",
+          "@",
+          "escaping",
+          "(",
+          ")",
+          "-",
+          ">",
+          "Void",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "ea8b0fc8d11882c5cc6dcf339c1d91efe172f52c82ad2cd1f3114ba5f433a13e"
+      }
+    ],
+    "AddServerHostView": [
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "isDuplicateLabel",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "c20f8f973c1e788b5cc10ace0de2bab0a540c8a9bd39a03747d835927cd98730"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "keyOK",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "46f7204af2d82d0b8f978432fa6c2d49820194de3a3a3062121fc8cf2bf042b8"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "credentialOK",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "4985d147be825a14f79e657564e3849714b85f75bd49685a46baa52ed8bf1956"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "static",
+          "func",
+          "validPort",
+          "(",
+          "_",
+          "text",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "Int",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "81bd83daea58d7bbfb30a473d4244aa8fa7ef1626a054e2d0fd094a162406aef"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "trimmedLabel",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "a48ae857981ce9eb25b4086cf48f4a42dc12b8f2bcd47c1adaed1eb18b6f2c49"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "trimmedHost",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "c33ee71e65e584d475736495e5e51301c2c0289ce960894c47566b7e67303602"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "trimmedUsername",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "2cca885d721fb250b68d355384beee4adb7f0926eaa0eae426a6ab6eb2c97272"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "isValid",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "f7a0f8155f92bd3b08146287609c3f6e0d89d320d52a5202364e627f63ee5af7"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "canTest",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "01d14a6754565ae0448fe486eba1ad57f399ec81c989dd49772b46d7535fbb5b"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "cbd3c91e647e77e8e95f5481fe83da802917dff80321abf051f6e9361631012f"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "sshSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "d0ad851ff3935dc579baca1840874260f85b9f7081d2b36d20f15278e0f2933c"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "keyEditor",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "a73ea6bacce40322da85a2b003a0d1f8a00574d7ac7a64c2d85d5f11090c9677"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "var",
+          "keyStatus",
+          ":",
+          "(",
+          "text",
+          ":",
+          "String",
+          ",",
+          "ok",
+          ":",
+          "Bool",
+          ")",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "fcf0b9a82d647dc672ac555b7cc1ed3749edb825c37f37c43eb0c8cfa93a5b4e"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "func",
+          "revalidateKey",
+          "(",
+          "_",
+          "text",
+          ":",
+          "String",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "ec2d5bbcb577335767ba6b40f51cbf6ed2e97e75f55c9c08c0a832c471d6c666"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "@",
+          "MainActor",
+          "private",
+          "func",
+          "testSSH",
+          "(",
+          ")",
+          "async"
+        ],
+        "mode": "unchanged",
+        "sha256": "f492ffc2318a8822149bf8451418f564e4dfbd1ca44f8b5ad0dca3b6eec64cda"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "func",
+          "save",
+          "(",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "0b1bef2900b612465abc24eb6c0f935f534c787215880714ff669e5414c20cc3"
+      },
+      {
+        "owner": "AddServerHostView",
+        "signature": [
+          "private",
+          "func",
+          "prefill",
+          "(",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "620b7e61914da6ebed673b925e00f7edb958028043962176d15b3c3beefd8f9f"
+      }
+    ],
+    "InstallOptionsView": [
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "init",
+          "(",
+          "limitToCarriers",
+          ":",
+          "[",
+          "String",
+          "]",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "singleOnly",
+          ":",
+          "Bool",
+          "=",
+          "false",
+          ",",
+          "onConfirm",
+          ":",
+          "@",
+          "escaping",
+          "(",
+          "_",
+          "primary",
+          ":",
+          "InstallOptions",
+          ",",
+          "_",
+          "extras",
+          ":",
+          "[",
+          "InstallOptions",
+          "]",
+          ")",
+          "-",
+          ">",
+          "Void",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "7845cf62df2a650ac755b91fd26bb550c8ae852c849c6213ec4d58f5f4b4ea6d"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "availableCarriers",
+          ":",
+          "[",
+          "String",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "7aefc730b4bc4cc14ba298cd55b3c898247ea169fe0a1688d85706ca543fa808"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "extraCarriers",
+          ":",
+          "[",
+          "String",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "7bb3a28f930f17a6d964bf01b630d8d71fbda265c8228f2a295a3071ad9ab93d"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "enabledExtraCarriers",
+          ":",
+          "[",
+          "String",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "a8dd5569cc19276d439e35811f83d6b7d4fe321d41ceaf3b2242140fb9537081"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "func",
+          "draft",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "ExtraDraft"
+        ],
+        "mode": "unchanged",
+        "sha256": "33a461145974417ad33063072476f6e540be35abd797d01bbbf8d4220e59bd84"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "func",
+          "draftBinding",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "Binding",
+          "<",
+          "ExtraDraft",
+          ">"
+        ],
+        "mode": "unchanged",
+        "sha256": "25f83c073bb33b11f5d109dd55a9d215193ec226da66f35d9db4a878dc960047"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "func",
+          "extraIsValid",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "df8b4f419dd3a3d842e3b5f579978d691e0b5246ebf8385a386104933aafb1bf"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "requiresRoomID",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "636d6424604ed475323a930b78ceb628e569f523ff4ef4d56206af3e6c73ba89"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "canSubmit",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "c919867096b3a84c1b1b687dfeb4499b6742464310e6e59b084768558408763f"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "func",
+          "transportOptions",
+          "(",
+          "for",
+          "carrier",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "[",
+          "OlcOption",
+          "<",
+          "String",
+          ">",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "e9bd7a4a75e0d1d9a7e92c7924b4c454b98c3d96a69209d0fc7211d31c9bf980"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "24fa239d3451ffa0cf64c572ae81e243358f665c6dd93345ea3d4dcf7894063b"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "carrierSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "2396ccbda803e928e788ab66cef6f96dec2303f0bf347ee7427989d70fd65e9c"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "transportSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "eb5913bdd77768657cd8f0f43e5ee9cb95b5526d42f4a64b16f253e7ceda3dbc"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "roomSuggestion",
+          "(",
+          "carrier",
+          ":",
+          "String",
+          ",",
+          "into",
+          "binding",
+          ":",
+          "Binding",
+          "<",
+          "String",
+          ">",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "523c41ed204aaf04f9fb8795176262c46177ad460344f2b8239b57fbb7da7081"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "roomIDSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "17e09bc27ff5b0aa3f6e23a94ff85c25ff9346001912bc17e9576ff59cc3f4c6"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "jitsiSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "9a27843c978e866e13a3e79c9158d74f0e49716659f75caf8f38188b8e1d9bef"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "wbTokenSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "624ff2b4a20598eac63be3e22e53af6912a1a406cb12839c7f548ce7ff00fb2d"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "seiSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "88c28496e80b08d23770e049fe1f614d87c3e2f399c66a77d80283bfd98cea68"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "extrasSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "4d7f1a24f77e9d7004b5be450cc34650fa2cf52efe2083d8a14a46ac1dead9f6"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "extraRows",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "4183eb340d5f83e3e06fbbe7f970b58f43cc9bd68c7f44bf51b1e2b3abe27cc6"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "extraRoomFields",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ",",
+          "binding",
+          ":",
+          "Binding",
+          "<",
+          "ExtraDraft",
+          ">",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "119c153a7205d9fd0e686928c92144bb0fa39e3d4a66ff5489e50806f75f782a"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "extraJitsiFields",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ",",
+          "binding",
+          ":",
+          "Binding",
+          "<",
+          "ExtraDraft",
+          ">",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "56bae19d54172a01b7489c3119296753c55d8b7129ec5366c055d248c3aaca1b"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "func",
+          "extraWbTokenFields",
+          "(",
+          "_",
+          "c",
+          ":",
+          "String",
+          ",",
+          "binding",
+          ":",
+          "Binding",
+          "<",
+          "ExtraDraft",
+          ">",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "fdc5e36b18f6590936eb603ae89159f7ec755ce517da023aaca907d364ab3194"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "defaultsInfoSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "60ba06912e5e1e80ed654ba33cdaf273fcda4e9c138d3e4bd952dc920776b1ad"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "func",
+          "submit",
+          "(",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "09ebc9e18d5cde35b56119d7218d70be538315614d09073a4d67cda16b018c30"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "transportFooter",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "ab64cf16825c38a78285afe388bb10dd4efe0ddf6e2f74dd5a677d58521d0fd0"
+      },
+      {
+        "owner": "InstallOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "roomFooter",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "c1c3db1514a034a9a8d837a00c64c21a5ab963ddde1d1131de0a8976a8bcf9a6"
+      }
+    ],
+    "ReconfigureOptionsView": [
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "init",
+          "(",
+          "initialCarrier",
+          ":",
+          "String",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "initialTransport",
+          ":",
+          "String",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "initialRoom",
+          ":",
+          "String",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "initialWbToken",
+          ":",
+          "String",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "initialJitsiBase",
+          ":",
+          "String",
+          "?",
+          "=",
+          "nil",
+          ",",
+          "onConfirm",
+          ":",
+          "@",
+          "escaping",
+          "(",
+          "InstallOptions",
+          ")",
+          "-",
+          ">",
+          "Void",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "5687ea0af6d0f60cbb2ef94a7821bd12fa1c607699e4aa6faf2b17a3a5a739ac"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "requiresRoomID",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "636d6424604ed475323a930b78ceb628e569f523ff4ef4d56206af3e6c73ba89"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "canSubmit",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "c7370859d086515d3f4bf2e6a1abfc562b6ceba7a5f3feec106aebbbf35fedcd"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "transportOptions",
+          ":",
+          "[",
+          "OlcOption",
+          "<",
+          "String",
+          ">",
+          "]"
+        ],
+        "mode": "unchanged",
+        "sha256": "1a16f58decdfa3002f66925f31b935ad64094bc34b8cc0e6ec4f5843793852a7"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "3116552e14d26be7acd57e579077ee24ca4897321728594d6c70371376ee0f2d"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "carrierSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "7e84f8721f343d991e45e75e2cc534e64694453b1dc07348d57c46b9a6956d04"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "transportSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "9a8c2a48a6dc02bc197669afbc541628ff205d944a5afbb4d5cebbbb2ec3e8ca"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "roomSuggestion",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "49553d1028bc5748ac4900479f6bc688044660d10e92beb36ccf10ac381cd9f2"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "roomIDSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "03a55296fa8d6c1d45139bbe3965c1d73d33a12fe88fa0f4e7a1e48a0adc35b6"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "jitsiSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "9a27843c978e866e13a3e79c9158d74f0e49716659f75caf8f38188b8e1d9bef"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "wbTokenSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "624ff2b4a20598eac63be3e22e53af6912a1a406cb12839c7f548ce7ff00fb2d"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "infoSection",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "2dc8747e0c8ed5506b4b917679e6877c490a5e2f688cbf325f4394428b8afd91"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "func",
+          "submit",
+          "(",
+          ")"
+        ],
+        "mode": "unchanged",
+        "sha256": "49227c165f6c421beb0ace4d576fe2d5a8ae44e4524ec276b2708cc78b0be4aa"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "static",
+          "func",
+          "jitsiRoom",
+          "(",
+          "_",
+          "room",
+          ":",
+          "String",
+          ",",
+          "movedTo",
+          "base",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "ca51534489303c3a40a578387d2eb3babb71f058054d3f91e84148901b43c711"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "transportFooter",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "ab64cf16825c38a78285afe388bb10dd4efe0ddf6e2f74dd5a677d58521d0fd0"
+      },
+      {
+        "owner": "ReconfigureOptionsView",
+        "signature": [
+          "private",
+          "var",
+          "roomFooter",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "c1c3db1514a034a9a8d837a00c64c21a5ab963ddde1d1131de0a8976a8bcf9a6"
+      }
+    ],
+    "TelemostRoomButton": [
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "c59245945e65e26c54cbabfd0a01ad7c520f15057d71aea736241c8e9ef6c5a6"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "tone",
+          ":",
+          "OlcStatusTone"
+        ],
+        "mode": "unchanged",
+        "sha256": "6465c7eb3f3f398235f4fa2c1061b28313839b9cea4c3d3147e68ac379b920a4"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "title",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "6110d41a5a52c7626861aa1a65d85cf05ef731244844ce76776bd0a9a5683ccf"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "subtitle",
+          ":",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "8a75bb4148e56efd1c767357decf1391e31317cef6abd67d66f0f0b58af6cb9b"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "roomLine",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "d8fae8c955c20567879a5f7894d6d39b3624be8ec0518c425de2089ea4c1ce64"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "showsHazard",
+          ":",
+          "Bool"
+        ],
+        "mode": "unchanged",
+        "sha256": "5d92eaa54742a3f0d573ba7c520f0f41671640e539b4da46d70c748e32f78807"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "hazardText",
+          ":",
+          "String",
+          "?"
+        ],
+        "mode": "unchanged",
+        "sha256": "19746243fb7156b300a314f16e38727929fd6dd92c55faecdc75d721eaaf24e1"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "hazardNote",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "7dd967de32967e02a2a2270f729bc0a81ac0ab05f44d0726135bb91720fa4934"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "func",
+          "warningBlock",
+          "(",
+          "_",
+          "text",
+          ":",
+          "String",
+          ")",
+          "-",
+          ">",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "ee727b3365b33de823b828510a72ed68c2cdb4b36f1772f2ce9d532ef48d29a7"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "warningShape",
+          ":",
+          "RoundedRectangle"
+        ],
+        "mode": "unchanged",
+        "sha256": "748b245bd1970cf4ed7c21a926a8ae3065d7438df81d60ecc8879eaee68b6c21"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "actions",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "21d8b080a78a6ef4c36b1b277f53d1bb03801c548c6c454d861860e4059ff883"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "idleActions",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "8e98d0c9ba56737c84a31e40c3f8c270295738bd67a969d467d9fc4a0c3acb71"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "switchAction",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "95eb8579e62a7536d749598e8d37cbc1f3fa472c2163f96354dd5ad10a3727db"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "workingAction",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "ce8ea11099b3b79a72771f906fb05c567d12a955940725d5f6ecc990a044f104"
+      },
+      {
+        "owner": "TelemostRoomButton",
+        "signature": [
+          "private",
+          "var",
+          "failedActions",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "59b338b5bcd975f465cfb93fd5298baabd88989a2a7d955dece2a7e69335de2c"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "var",
+          "body",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "8ed0314419f54f813b0625f16119556179acaa1b8a2ca0a3e491f48e2782954b"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "private",
+          "var",
+          "scroller",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "a40c9bf00acfdf97d74f56f3f72b9584c68520700dab80d65b143735e191a3aa"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "private",
+          "var",
+          "accountStatus",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "00db85ea67649685cc2bebe990d827a0ce27abf13345b1260ff4bff93c313cd4"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "static",
+          "func",
+          "accountTone",
+          "(",
+          "hasAccount",
+          ":",
+          "Bool",
+          ")",
+          "-",
+          ">",
+          "OlcStatusTone"
+        ],
+        "mode": "unchanged",
+        "sha256": "aeed839d9ac2d097585758738e9c368c5cc06d76588260d3bdb7566d4aebbfa3"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "static",
+          "func",
+          "accountTitle",
+          "(",
+          "hasAccount",
+          ":",
+          "Bool",
+          ")",
+          "-",
+          ">",
+          "String"
+        ],
+        "mode": "unchanged",
+        "sha256": "e79ca520aa8262dd37b55c454e17f936e6523f772b523d692c1a11b069162254"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "private",
+          "var",
+          "header",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "presentation",
+        "sha256": "8a7b7736de1e6ae01d557c72c61da950f3137d052f61fddd609f92371a17eccd"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "private",
+          "var",
+          "control",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "94fd4f2149c7bd5be447b99f104e3c821c7025ab6a7bfffe306a0f0eee9f6022"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "@",
+          "ViewBuilder",
+          "private",
+          "var",
+          "accountFooter",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "27d5802a558d50cd717478d7d6b482148edd9e00dabdd6c016df3a1a3c061ca4"
+      },
+      {
+        "owner": "TelemostRoomSheet",
+        "signature": [
+          "private",
+          "var",
+          "login",
+          ":",
+          "some",
+          "View"
+        ],
+        "mode": "unchanged",
+        "sha256": "d8707e115479ab02e2f664f64c72b159712317e9bdede6796aad0c7b8edfc802"
+      }
+    ]
+  },
+  "binding_targets": {
+    "ServersView": [
+      "$addProtocolFor",
+      "$advancedForHost",
+      "$botConfigFor",
+      "$editHost",
+      "$installFor",
+      "$logsForHost",
+      "$reconfigureRequest",
+      "$scanFor",
+      "$shareConn",
+      "$shareFullAccess",
+      "$showAdd",
+      "$telemostRenew"
+    ],
+    "ServerCardView": [],
+    "ProtocolRowView": [],
+    "ServerAdvancedView": [],
+    "AddServerHostView": [
+      "$authMethod",
+      "$host",
+      "$keyPassphrase",
+      "$label",
+      "$password",
+      "$port",
+      "$portFocused",
+      "$privateKey",
+      "$username"
+    ],
+    "InstallOptionsView": [
+      "$carrier",
+      "$jitsiBaseURL",
+      "$roomID",
+      "$seiACK",
+      "$seiBatch",
+      "$seiFPS",
+      "$seiFrag",
+      "$transport",
+      "$wbToken"
+    ],
+    "ReconfigureOptionsView": [
+      "$carrier",
+      "$jitsiBaseURL",
+      "$roomID",
+      "$transport",
+      "$wbToken"
+    ],
+    "TelemostRoomButton": [
+      "$showLogin"
+    ]
+  },
+  "callback_inputs": {
+    "ServersView": [],
+    "ServerCardView": [
+      "    let onPrimary: () -> Void",
+      "    let onAddProtocol: () -> Void",
+      "    let onLogs: () -> Void",
+      "    let onManage: () -> Void"
+    ],
+    "ProtocolRowView": [
+      "    let onVerify: () -> Void"
+    ],
+    "ServerAdvancedView": [
+      "    let onRecover: () -> Void",
+      "    let onShareFullAccess: () -> Void",
+      "    let onUpdate: () -> Void",
+      "    let onReboot: () -> Void",
+      "    let onUninstall: () -> Void",
+      "    let onDeepUninstall: () -> Void",
+      "    let onRemoveHost: () -> Void",
+      "    let onResetHostKeyTrust: () -> Void"
+    ],
+    "AddServerHostView": [
+      "    var onSave: (ServerHost, SSHSecret) -> Void   // (host, credential)"
+    ],
+    "InstallOptionsView": [
+      "    let onConfirm: (_ primary: InstallOptions, _ extras: [InstallOptions]) -> Void"
+    ],
+    "ReconfigureOptionsView": [
+      "\n    let onConfirm: (InstallOptions) -> Void"
+    ],
+    "TelemostRoomButton": [
+      "    let onSignIn: () -> Void",
+      "    let onCreate: () -> Void",
+      "    let onSwitchCarrier: () -> Void",
+      "    let onSignedIn: (String) -> Void",
+      "    let onForgetAccount: () -> Void",
+      "    let onCreate: () -> Void",
+      "    let onSwitchCarrier: () -> Void"
+    ]
+  },
+  "control_bindings": {
+    "ServersView": [],
+    "ServerCardView": [],
+    "ProtocolRowView": [],
+    "ServerAdvancedView": [],
+    "AddServerHostView": [
+      [
+        "FormField",
+        "(",
+        "label",
+        ":",
+        "L10n",
+        ".",
+        "nameField",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "placeholder",
+        ":",
+        "\"TW Moscow\"",
+        ",",
+        "text",
+        ":",
+        "$",
+        "label",
+        ")"
+      ],
+      [
+        "FormField",
+        "(",
+        "label",
+        ":",
+        "L10n",
+        ".",
+        "hostField",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "placeholder",
+        ":",
+        "\"1.2.3.4\"",
+        ",",
+        "text",
+        ":",
+        "$",
+        "host",
+        ")"
+      ],
+      [
+        "FormField",
+        "(",
+        "label",
+        ":",
+        "L10n",
+        ".",
+        "portField",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "placeholder",
+        ":",
+        "\"22\"",
+        ",",
+        "text",
+        ":",
+        "$",
+        "port",
+        ",",
+        "keyboard",
+        ":",
+        ".",
+        "numberPad",
+        ",",
+        "focusBinding",
+        ":",
+        "$",
+        "portFocused",
+        ")"
+      ],
+      [
+        "FormField",
+        "(",
+        "label",
+        ":",
+        "L10n",
+        ".",
+        "loginField",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "placeholder",
+        ":",
+        "\"root\"",
+        ",",
+        "text",
+        ":",
+        "$",
+        "username",
+        ")"
+      ],
+      [
+        "Picker",
+        "(",
+        "L10n",
+        ".",
+        "authMethodPickerLabel",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "selection",
+        ":",
+        "$",
+        "authMethod",
+        ")"
+      ],
+      [
+        "FormField",
+        "(",
+        "label",
+        ":",
+        "L10n",
+        ".",
+        "passwordField",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "placeholder",
+        ":",
+        "\"•••\"",
+        ",",
+        "text",
+        ":",
+        "$",
+        "password",
+        ",",
+        "secure",
+        ":",
+        "true",
+        ")"
+      ],
+      [
+        "TextEditor",
+        "(",
+        "text",
+        ":",
+        "$",
+        "privateKey",
+        ")"
+      ],
+      [
+        "FormField",
+        "(",
+        "label",
+        ":",
+        "L10n",
+        ".",
+        "sshKeyPassphraseField",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "placeholder",
+        ":",
+        "\"•••\"",
+        ",",
+        "text",
+        ":",
+        "$",
+        "keyPassphrase",
+        ",",
+        "secure",
+        ":",
+        "true",
+        ")"
+      ]
+    ],
+    "InstallOptionsView": [
+      [
+        "OlcChipPicker",
+        "(",
+        "selection",
+        ":",
+        "$",
+        "carrier",
+        ",",
+        "options",
+        ":",
+        "availableCarriers",
+        ".",
+        "map",
+        "{",
+        "(",
+        "$",
+        "0",
+        ",",
+        "CarrierTransportMatrix",
+        ".",
+        "carrierLabel",
+        "(",
+        "$",
+        "0",
+        ")",
+        ")",
+        "}",
+        ")"
+      ],
+      [
+        "OlcChipPicker",
+        "(",
+        "selection",
+        ":",
+        "$",
+        "transport",
+        ",",
+        "options",
+        ":",
+        "transportOptions",
+        "(",
+        "for",
+        ":",
+        "carrier",
+        ")",
+        ")"
+      ],
+      [
+        "TextField",
+        "(",
+        "L10n",
+        ".",
+        "fieldRoomID",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "$",
+        "roomID",
+        ")"
+      ],
+      [
+        "TextField",
+        "(",
+        "L10n",
+        ".",
+        "fieldJitsiURL",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "$",
+        "jitsiBaseURL",
+        ")"
+      ],
+      [
+        "SecureField",
+        "(",
+        "L10n",
+        ".",
+        "wbTokenFieldLabel",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "$",
+        "wbToken",
+        ")"
+      ],
+      [
+        "Stepper",
+        "(",
+        "\"\\(L10n.seiFpsLabel.localized()): \\(seiFPS)\"",
+        ",",
+        "value",
+        ":",
+        "$",
+        "seiFPS",
+        ",",
+        "in",
+        ":",
+        "SettingsStore",
+        ".",
+        "Defaults",
+        ".",
+        "seiFPSRange",
+        ")"
+      ],
+      [
+        "Stepper",
+        "(",
+        "\"\\(L10n.seiBatchLabel.localized()): \\(seiBatch)\"",
+        ",",
+        "value",
+        ":",
+        "$",
+        "seiBatch",
+        ",",
+        "in",
+        ":",
+        "SettingsStore",
+        ".",
+        "Defaults",
+        ".",
+        "seiBatchRange",
+        ")"
+      ],
+      [
+        "Stepper",
+        "(",
+        "\"\\(L10n.seiFragLabel.localized()): \\(seiFrag)\"",
+        ",",
+        "value",
+        ":",
+        "$",
+        "seiFrag",
+        ",",
+        "in",
+        ":",
+        "SettingsStore",
+        ".",
+        "Defaults",
+        ".",
+        "seiFragRange",
+        ",",
+        "step",
+        ":",
+        "1",
+        "0",
+        "0",
+        ")"
+      ],
+      [
+        "Stepper",
+        "(",
+        "\"\\(L10n.seiAckLabel.localized()): \\(seiACK)\"",
+        ",",
+        "value",
+        ":",
+        "$",
+        "seiACK",
+        ",",
+        "in",
+        ":",
+        "SettingsStore",
+        ".",
+        "Defaults",
+        ".",
+        "seiACKRange",
+        ",",
+        "step",
+        ":",
+        "1",
+        "0",
+        "0",
+        ")"
+      ],
+      [
+        "Toggle",
+        "(",
+        "L10n",
+        ".",
+        "installExtraToggle_fmt",
+        ".",
+        "formatted",
+        "(",
+        "CarrierTransportMatrix",
+        ".",
+        "carrierLabel",
+        "(",
+        "c",
+        ")",
+        ")",
+        ",",
+        "isOn",
+        ":",
+        "binding",
+        ".",
+        "enabled",
+        ")"
+      ],
+      [
+        "OlcChipPicker",
+        "(",
+        "selection",
+        ":",
+        "binding",
+        ".",
+        "transport",
+        ",",
+        "options",
+        ":",
+        "transportOptions",
+        "(",
+        "for",
+        ":",
+        "c",
+        ")",
+        ")"
+      ],
+      [
+        "TextField",
+        "(",
+        "L10n",
+        ".",
+        "fieldRoomID",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "binding",
+        ".",
+        "roomID",
+        ")"
+      ],
+      [
+        "TextField",
+        "(",
+        "L10n",
+        ".",
+        "fieldJitsiURL",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "binding",
+        ".",
+        "jitsiBaseURL",
+        ")"
+      ],
+      [
+        "SecureField",
+        "(",
+        "L10n",
+        ".",
+        "wbTokenFieldLabel",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "binding",
+        ".",
+        "wbToken",
+        ")"
+      ]
+    ],
+    "ReconfigureOptionsView": [
+      [
+        "OlcChipPicker",
+        "(",
+        "selection",
+        ":",
+        "$",
+        "carrier",
+        ",",
+        "options",
+        ":",
+        "CarrierTransportMatrix",
+        ".",
+        "carriers",
+        ".",
+        "map",
+        "{",
+        "(",
+        "$",
+        "0",
+        ",",
+        "CarrierTransportMatrix",
+        ".",
+        "carrierLabel",
+        "(",
+        "$",
+        "0",
+        ")",
+        ")",
+        "}",
+        ")"
+      ],
+      [
+        "OlcChipPicker",
+        "(",
+        "selection",
+        ":",
+        "$",
+        "transport",
+        ",",
+        "options",
+        ":",
+        "transportOptions",
+        ")"
+      ],
+      [
+        "TextField",
+        "(",
+        "L10n",
+        ".",
+        "fieldRoomID",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "$",
+        "roomID",
+        ")"
+      ],
+      [
+        "TextField",
+        "(",
+        "L10n",
+        ".",
+        "fieldJitsiURL",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "$",
+        "jitsiBaseURL",
+        ")"
+      ],
+      [
+        "SecureField",
+        "(",
+        "L10n",
+        ".",
+        "wbTokenFieldLabel",
+        ".",
+        "localized",
+        "(",
+        ")",
+        ",",
+        "text",
+        ":",
+        "$",
+        "wbToken",
+        ")"
+      ]
+    ],
+    "TelemostRoomButton": []
+  },
+  "action_closures": {
+    "ServersView": [
+      [
+        "onPrimary",
+        ":",
+        "{",
+        "runPrimary",
+        "(",
+        "host",
+        ",",
+        "state",
+        ":",
+        "state",
+        ")",
+        "}"
+      ],
+      [
+        "onAddProtocol",
+        ":",
+        "{",
+        "addProtocolFor",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onLogs",
+        ":",
+        "{",
+        "logsForHost",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onManage",
+        ":",
+        "{",
+        "advancedForHost",
+        "=",
+        "AdvancedHostRoute",
+        "(",
+        "host",
+        ":",
+        "host",
+        ")",
+        "}"
+      ],
+      [
+        "onRecover",
+        ":",
+        "{",
+        "recoverConfirmHost",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onShareFullAccess",
+        ":",
+        "{",
+        "presentFullAccessShare",
+        "(",
+        "host",
+        ")",
+        "}"
+      ],
+      [
+        "onUpdate",
+        ":",
+        "{",
+        "advancedForHost",
+        "=",
+        "nil",
+        ";",
+        "Task",
+        "{",
+        "await",
+        "update",
+        "(",
+        "host",
+        ")",
+        "}",
+        "}"
+      ],
+      [
+        "onReboot",
+        ":",
+        "{",
+        "rebootConfirmHost",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onUninstall",
+        ":",
+        "{",
+        "uninstallConfirmHost",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onDeepUninstall",
+        ":",
+        "{",
+        "deepUninstallConfirmHost",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onRemoveHost",
+        ":",
+        "{",
+        "removeHost",
+        "=",
+        "host",
+        "}"
+      ],
+      [
+        "onVerify",
+        ":",
+        "{",
+        "verifyRow",
+        "(",
+        "host",
+        ",",
+        "row",
+        ":",
+        "row",
+        ")",
+        "}"
+      ],
+      [
+        "onSignedIn",
+        ":",
+        "{",
+        "adoptYandexSession",
+        "(",
+        "$",
+        "0",
+        ")",
+        "}"
+      ],
+      [
+        "onForgetAccount",
+        ":",
+        "{",
+        "forgetYandexSession",
+        "(",
+        ")",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "Task",
+        "{",
+        "await",
+        "renewTelemostRoom",
+        "(",
+        "req",
+        ")",
+        "}",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "switchCarrierBeforeRenewal",
+        "(",
+        "req",
+        ")",
+        "}"
+      ]
+    ],
+    "ServerCardView": [],
+    "ProtocolRowView": [
+      [
+        "onVerify",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onVerify",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onVerify",
+        ":",
+        "{",
+        "}"
+      ]
+    ],
+    "ServerAdvancedView": [],
+    "AddServerHostView": [],
+    "InstallOptionsView": [],
+    "ReconfigureOptionsView": [],
+    "TelemostRoomButton": [
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "showLogin",
+        "=",
+        "true",
+        "}"
+      ],
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSignIn",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSignedIn",
+        ":",
+        "{",
+        "_",
+        "in",
+        "}"
+      ],
+      [
+        "onForgetAccount",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onCreate",
+        ":",
+        "{",
+        "}"
+      ],
+      [
+        "onSwitchCarrier",
+        ":",
+        "{",
+        "}"
+      ]
+    ]
+  },
+  "localized_keys": {
+    "ServersView": [
+      "actionChangeRoomTransport",
+      "actionDeepUninstall",
+      "actionDone",
+      "actionReboot",
+      "actionRecoverConnection",
+      "actionRemoveFromList",
+      "actionScanVPS",
+      "actionUninstall",
+      "alertKeyMissingShort",
+      "alertPasswordMissingShort",
+      "autoDetectedContainer_fmt",
+      "botSheetTitle",
+      "cancel",
+      "containerNotInstalled",
+      "deepUninstallConfirmBody",
+      "edit",
+      "emptyNoServers",
+      "emptyNoServersHint",
+      "healthActionVerify",
+      "healthLatencyMs_fmt",
+      "healthShowReasonAction",
+      "installExistingFoundBody",
+      "installExistingFoundTitle_fmt",
+      "installExtrasPartialFail_fmt",
+      "installReinstallAction",
+      "installUseExistingAction",
+      "newServerTitle",
+      "ok",
+      "okPrompt",
+      "protocolAdded_fmt",
+      "protocolConnectAction",
+      "protocolRecordMissing",
+      "protocolRecreateAction",
+      "protocolRemoved_fmt",
+      "protocolStartAction",
+      "protocolStopAction",
+      "rebootConfirmBody",
+      "rebootConfirmTitle",
+      "recoverConfirmAction",
+      "recoverConfirmBody",
+      "recoverConfirmTitle",
+      "recoverResultSuccess_fmt",
+      "removeHostConfirmMessage",
+      "removeHostConfirmTitle_fmt",
+      "removeProtocolAction",
+      "removeProtocolConfirmBody",
+      "removeProtocolConfirmTitle_fmt",
+      "roomPrefix_fmt",
+      "rotateKeyConfirmAction",
+      "rotateKeyConfirmBody",
+      "rotateKeyConfirmTitle",
+      "rotateKeyResultAdded_fmt",
+      "scanNoContainers",
+      "scanRestoreAction",
+      "scanRestored_fmt",
+      "serversTitle",
+      "shareConnectionTitle",
+      "shareFullAccessKeyHostUnavailable",
+      "sshHostKeyResetDone",
+      "stateErrorPrefix_fmt",
+      "telemostNewRoomAction",
+      "telemostRenewDropped_fmt",
+      "telemostRoomWorkingApply",
+      "telemostRoomWorkingCreate",
+      "uninstallConfirmBody",
+      "uninstallConfirmTitle",
+      "vpsMachineLine_fmt",
+      "vpsProcessUnread",
+      "vpsReadAge_fmt",
+      "vpsScanBeforeInstall",
+      "vpsScanFailed_fmt"
+    ],
+    "ServerCardView": [
+      "actionInstall",
+      "actionRetry",
+      "actionStart",
+      "actionStop",
+      "addProtocolAction",
+      "logsTitle",
+      "protocolsSectionHeader",
+      "vpsCheckServer",
+      "vpsManageServer",
+      "vpsWorking"
+    ],
+    "ProtocolRowView": [
+      "protocolLiveBadge",
+      "protocolStoppedNote"
+    ],
+    "ServerAdvancedView": [
+      "actionDeepUninstall",
+      "actionReboot",
+      "actionRecoverConnection",
+      "actionRemoveFromList",
+      "actionUninstall",
+      "actionUpdate",
+      "shareFullAccessTitle",
+      "cancel",
+      "sshHostKeyChangedTitle",
+      "sshHostKeyMismatch",
+      "sshHostKeyResetAction",
+      "sshHostKeyResetWarning",
+      "vpsAdvancedConnectionHeader",
+      "vpsAdvancedDeepUninstallFooter",
+      "vpsAdvancedMachineHeader",
+      "vpsAdvancedMaintenanceHeader",
+      "vpsAdvancedRebootFooter",
+      "vpsAdvancedRemoveHeader",
+      "vpsAdvancedRemoveHostFooter",
+      "vpsAdvancedTitle_fmt",
+      "vpsAdvancedUninstallFooter",
+      "vpsStatDisk",
+      "vpsStatPing",
+      "vpsStatRAM",
+      "vpsStatUp"
+    ],
+    "AddServerHostView": [
+      "actionDone",
+      "authMethodKey",
+      "authMethodPassword",
+      "authMethodPickerLabel",
+      "duplicateServerNameError",
+      "editServerTitle",
+      "hostField",
+      "loginField",
+      "nameField",
+      "newServerTitle",
+      "passwordField",
+      "pingTCPFail_fmt",
+      "pingTCPOK_fmt",
+      "portField",
+      "save",
+      "sectionDescription",
+      "sshAccessHeader",
+      "sshKeyDetectedEncrypted_fmt",
+      "sshKeyDetected_fmt",
+      "sshKeyErrorECDSA",
+      "sshKeyErrorNotAKey",
+      "sshKeyErrorUnsupportedFormat",
+      "sshKeyFooter",
+      "sshKeyPassphraseField",
+      "sshKeyPasteButton",
+      "sshTestInvalidPort",
+      "vpsStatPing"
+    ],
+    "InstallOptionsView": [
+      "actionInstall",
+      "addProtocolAction",
+      "addProtocolTitle",
+      "carrierChoiceFooter",
+      "carrierFooter",
+      "carrierFooterSharedKey",
+      "fieldJitsiURL",
+      "fieldRoomID",
+      "installExtraToggle_fmt",
+      "installExtrasFooter",
+      "installExtrasHeader",
+      "installTitle",
+      "jitsiServerFooter",
+      "jitsiServerHeader",
+      "roomIDAutoGenHint",
+      "roomIDLastUsed_fmt",
+      "roomIDSectionHeader",
+      "roomIDTelemostHint",
+      "roomIDWbstreamHint",
+      "sectionCarrier",
+      "seiSettingsFooter",
+      "seiSettingsHeader",
+      "transportSectionHeader",
+      "transportUsesServerDefaults_fmt",
+      "wbTokenFieldLabel",
+      "wbTokenFooter",
+      "wbTokenHeader"
+    ],
+    "ReconfigureOptionsView": [
+      "actionChangeRoomTransport",
+      "carrierChoiceFooter",
+      "fieldJitsiURL",
+      "fieldRoomID",
+      "jitsiServerFooter",
+      "jitsiServerHeader",
+      "matrixFail_fmt",
+      "reconfigureInfoFooter",
+      "reconfigureTitle",
+      "reconfigureTransportTuningFooter",
+      "roomIDAutoGenHint",
+      "roomIDLastUsed_fmt",
+      "roomIDSectionHeader",
+      "roomIDTelemostHint",
+      "roomIDWbstreamHint",
+      "sectionCarrier",
+      "transportSectionHeader",
+      "transportUsesServerDefaults_fmt",
+      "wbTokenFieldLabel",
+      "wbTokenFooter",
+      "wbTokenHeader"
+    ],
+    "TelemostRoomButton": [
+      "done",
+      "telemostNewRoomAction",
+      "telemostRenewLiveOnly",
+      "telemostRenewLiveSwitchable_fmt",
+      "telemostRenewSwitchAction_fmt",
+      "telemostRoomCreateAction",
+      "telemostRoomDoneBody",
+      "telemostRoomDoneTitle",
+      "telemostRoomExplainer",
+      "telemostRoomFailedTitle",
+      "telemostRoomForgetAccountAction",
+      "telemostRoomIdleBody",
+      "telemostRoomIdleTitle",
+      "telemostRoomKeychainNote",
+      "telemostRoomNoAccountBody",
+      "telemostRoomNoAccountTitle",
+      "telemostRoomOtherAccountAction",
+      "telemostRoomRetryAction",
+      "telemostRoomServerLine_fmt",
+      "telemostRoomSignInAction",
+      "telemostRoomWorkingTitle",
+      "telemostSignInSaved"
+    ]
+  },
+  "display_literals": {
+    "ServersView": [
+      "\"· \\(container.carrier)/\\(container.transport)\""
+    ],
+    "ServerCardView": [],
+    "ProtocolRowView": [],
+    "ServerAdvancedView": [],
+    "AddServerHostView": [],
+    "InstallOptionsView": [],
+    "ReconfigureOptionsView": [],
+    "TelemostRoomButton": []
+  },
+  "lifecycle_paths": [
+    [
+      ".",
+      "refreshable",
+      "{",
+      "await",
+      "refreshAllHosts",
+      "(",
+      ")",
+      "}"
+    ],
+    [
+      ".",
+      "task",
+      "(",
+      "id",
+      ":",
+      "serverStore",
+      ".",
+      "hosts",
+      ".",
+      "map",
+      "(",
+      "\\",
+      ".",
+      "id",
+      ")",
+      ")",
+      "{",
+      "await",
+      "autoPingOnce",
+      "(",
+      ")",
+      "await",
+      "checkNeverProbedHosts",
+      "(",
+      ")",
+      "}"
+    ],
+    [
+      ".",
+      "onAppear",
+      "{",
+      "Task",
+      "{",
+      "await",
+      "refreshOnEntry",
+      "(",
+      ")",
+      "}",
+      "}"
+    ]
+  ],
+  "trust_contracts": [
+    "FormField(label: L10n.passwordField.localized(), placeholder: \"•••\", text: $password, secure: true)",
+    "TextEditor(text: $privateKey)",
+    ".olcSheet(confirm: L10n.save.localized(), disabled: !isValid) { save() }",
+    ".onAppear { prefill() }",
+    ".onDisappear { testTask?.cancel() testTask = nil }",
+    "testResult = nil isTesting = true testTask = Task { await testSSH() }"
+  ]
+}

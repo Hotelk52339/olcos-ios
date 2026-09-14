@@ -1,0 +1,2 @@
+/* #488: The OS camera prompt mirrors the English permission purpose. */
+"NSCameraUsageDescription" = "Permet de scanner des QR codes pour importer des connexions à des serveurs.";

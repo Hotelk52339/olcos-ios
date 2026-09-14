@@ -1,0 +1,61 @@
+name: Feature request
+description: Propose a focused improvement to olcOS.
+title: "[feat]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Russian, English and French are welcome. Search existing issues before proposing a large change.
+        This is the iOS app. Android, Windows and macOS are plans, not released olcOS clients.
+        **Security reports belong in private:** see [SECURITY.md](https://github.com/Hotelk52339/olcos-ios/blob/main/SECURITY.md).
+        Do not attach real IPs, credentials, complete links, QR codes or identifying logs.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and who it affects
+      description: Describe the task you cannot complete or the friction you encounter, not only the desired solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include limitations, accessibility and routing/security consequences where relevant. Clearly label concepts and mockups.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and current workaround
+    validations:
+      required: false
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Current environment, if relevant
+      description: No secrets or real IPs. Unknown or not applicable is fine. Logs are optional and must be sanitized.
+      placeholder: |
+        App version / build:
+        Device / iOS:
+        Installation / signing:
+        Selected mode / actual backend:
+        WebRTC carrier / transport:
+        App language (RU / EN / FR):
+        Sanitized diagnostic evidence, if relevant:
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How would we verify the improvement?
+      description: Observable acceptance criteria, without fabricated performance or universal availability claims.
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the report and attachments for secrets, working links, QR codes and real IPs.
+          required: true

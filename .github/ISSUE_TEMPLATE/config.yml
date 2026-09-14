@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/Hotelk52339/olcos-ios/security/advisories/new
+    about: GitHub private reporting; never publish vulnerability details in an issue. See SECURITY.md for the reporting policy.
+  - name: Setup and troubleshooting
+    url: https://github.com/Hotelk52339/olcos-ios/blob/main/docs/setup.md
+    about: Connection modes, automatic SSH trust and VPN support boundaries.
+  - name: Upstream olcrtc
+    url: https://github.com/openlibrecommunity/olcrtc
+    about: Separate core and protocol project. Use its private security guidance for vulnerabilities, not its ordinary issues.

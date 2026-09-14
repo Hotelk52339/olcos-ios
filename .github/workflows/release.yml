@@ -1,0 +1,164 @@
+name: olcOS Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing public version tag (e.g. v1.0.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: olcos-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate:
+    # Only the public olcOS repository may publish releases.
+    if: github.repository == 'Hotelk52339/olcos-ios'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      commit: ${{ steps.version.outputs.commit }}
+    steps:
+      - name: Validate tag syntax before using it as a ref
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?\.[1-9][0-9]*$ ]] || {
+            echo "::error::Expected v<version>.<build>"; exit 1;
+          }
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate exact tag and public version
+        id: version
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          python3 scripts/cut-release.py --check-tag "$TAG"
+          COMMIT="$(git rev-parse "refs/tags/$TAG^{commit}")"
+          test "$(git rev-parse HEAD)" = "$COMMIT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+
+  build-test:
+    needs: validate
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.validate.outputs.commit }}
+      release-tag: ${{ needs.validate.outputs.tag }}
+
+  lint:
+    name: SwiftLint
+    needs: validate
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.validate.outputs.commit }}
+          persist-credentials: false
+      - name: SwiftLint
+        run: |
+          command -v swiftlint || brew install swiftlint
+          swiftlint version
+          swiftlint lint --reporter github-actions-logging
+
+  publish:
+    name: Publish only tested, complete assets
+    needs: [validate, build-test, lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_REPO: Hotelk52339/olcos-ios
+      TAG: ${{ needs.validate.outputs.tag }}
+      TESTED_COMMIT: ${{ needs.validate.outputs.commit }}
+    steps:
+      # No source checkout or execution of repository scripts in the write-token job.
+      - uses: actions/download-artifact@v4
+        with:
+          name: olcos-ios-unsigned.ipa
+          path: release-assets
+      - uses: actions/download-artifact@v4
+        with:
+          name: olcos-release-support
+          path: release-assets
+      - name: Verify complete tested assets
+        working-directory: release-assets
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          expected = {"olcos-ios-unsigned.ipa", "Mobile.xcframework.zip", "framework-provenance.json"}
+          sums = {}
+          for line in Path("SHA256SUMS").read_text().splitlines():
+              digest, name = line.split(maxsplit=1)
+              name = name.lstrip("*")
+              if name in sums:
+                  raise SystemExit("Duplicate checksum")
+              sums[name] = digest
+          if set(sums) != expected:
+              raise SystemExit("Incomplete/unexpected release assets")
+          for name, digest in sums.items():
+              file = Path(name)
+              if not file.stat().st_size or hashlib.sha256(file.read_bytes()).hexdigest() != digest:
+                  raise SystemExit(f"Invalid asset: {name}")
+          provenance = json.loads(Path("framework-provenance.json").read_text())
+          if (provenance["commit"] != os.environ["TESTED_COMMIT"]
+                  or provenance["tag"] != os.environ["TAG"]
+                  or provenance["repository"] != os.environ["GH_REPO"]):
+              raise SystemExit("Release provenance does not match tested source")
+          PY
+      - name: Draft, verify all uploads, then publish
+        working-directory: release-assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Refuse a moved tag. Existing releases (including drafts) are never
+          # overwritten; investigate/remove an abandoned draft before retrying.
+          test "$(gh api "repos/$GH_REPO/commits/$TAG" --jq .sha)" = "$TESTED_COMMIT"
+          VERSION="${TAG#v}"
+          VERSION="${VERSION%.*}"
+          cat > notes.md <<EOF
+          olcOS $VERSION (build ${TAG##*.})
+
+          Built from commit \`$TESTED_COMMIT\` after Python source contracts, SSH/bot/parity checks, Go tests, simulator XCTest, and an unsigned Release device build passed.
+
+          - \`olcos-ios-unsigned.ipa\`: unsigned app for sideloading; requires re-signing.
+          - \`Mobile.xcframework.zip\`: matching iOS device + simulator framework.
+          - \`framework-provenance.json\` and \`SHA256SUMS\`: source inputs and asset integrity.
+
+          Simulator tests do not validate on-device Network Extension operation. No signing secrets are used.
+          EOF
+          gh release create "$TAG" --repo "$GH_REPO" --verify-tag --draft \
+            --title "olcOS $VERSION" --notes-file notes.md \
+            olcos-ios-unsigned.ipa Mobile.xcframework.zip framework-provenance.json SHA256SUMS
+          gh release view "$TAG" --repo "$GH_REPO" --json isDraft,assets > uploaded.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          release = json.loads(Path("uploaded.json").read_text())
+          assets = {asset["name"]: asset["size"] for asset in release["assets"]}
+          names = {"olcos-ios-unsigned.ipa", "Mobile.xcframework.zip", "framework-provenance.json", "SHA256SUMS"}
+          if not release["isDraft"] or set(assets) != names:
+              raise SystemExit("Release must remain draft: incomplete/unexpected assets")
+          if any(assets[name] != Path(name).stat().st_size for name in names):
+              raise SystemExit("Release must remain draft: uploaded asset size mismatch")
+          PY
+          test "$(gh api "repos/$GH_REPO/commits/$TAG" --jq .sha)" = "$TESTED_COMMIT"
+          gh release edit "$TAG" --repo "$GH_REPO" --draft=false --latest

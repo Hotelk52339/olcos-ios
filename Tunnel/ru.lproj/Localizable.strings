@@ -1,0 +1,3 @@
+/* #485: Russian counterparts of every extension error key. */
+"vpn.startRequiresApp" = "Открой OlcRTC и подключись из приложения, чтобы восстановить данные доступа VPN.";
+"vpn.unsupportedDNS" = "Для VPN нужен IPv4 DNS-сервер на порту 53. Открой приложение и выбери совместимый DNS в настройках.";

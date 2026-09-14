@@ -1,0 +1,159 @@
+name: olcrtc-ios
+
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  defaultConfig: Debug
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    # #vpn: versions hoisted to project level so the app and the tunnel
+    # appex ship in lockstep (CFBundleVersion drift breaks App Store
+    # validation and confuses sideloads); scripts/cut-release.py reads
+    # CURRENT_PROJECT_VERSION from here.
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+packages:
+  Citadel:
+    url: https://github.com/orlandos-nl/Citadel
+    from: "0.6.0"
+
+targets:
+  olcrtc-ios:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - "Mobile.xcframework/**"
+      - path: LICENSE
+        buildPhase: resources
+      - path: scripts/srv.sh
+        buildPhase: resources
+      # #314: rotate-key.sh ships alongside srv.sh — uploaded over SSH by the
+      # "generate new key" fallback of the #303 recover-connection flow.
+      - path: scripts/rotate-key.sh
+        buildPhase: resources
+      # #452: add-carrier.sh — attaches an extra carrier to an existing install
+      # as a sibling container sharing the deploy dir / binary / key
+      # (multi-carrier VPS); uploaded over SSH by SSHRunner.addCarrier.
+      - path: scripts/add-carrier.sh
+        buildPhase: resources
+      # #416: olcrtc-bot.py — the server-side control bot, uploaded over SSH and
+      # installed as a systemd service by the bot-deploy flow (#418).
+      - path: scripts/olcrtc-bot.py
+        buildPhase: resources
+    info:
+      path: App/Info.plist
+      properties:
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+        # #376: this is the base/en fallback; localized variants live in
+        # App/<lang>.lproj/InfoPlist.strings (the OS reads the prompt from the
+        # bundle, so it can't go through the runtime L10n enum).
+        NSCameraUsageDescription: "Used to scan QR codes for importing server connections."
+        UIBackgroundModes:
+          - audio
+        UILaunchScreen: {}
+        # #340 was: UIUserInterfaceStyle: Dark (#258 forced dark app-wide) —
+        # appearance now follows the in-app System/Light/Dark setting via
+        # preferredColorScheme; the plist key would have overridden it.
+        # #241: home-screen name shows the brand "olcOS"
+        # instead of the technical target "olcrtc-ios". Technical IDs (scheme,
+        # bundle id, container, OLCRTC_* env) stay lowercase olcrtc.
+        CFBundleDisplayName: olcOS
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleURLTypes:
+          - CFBundleURLName: olcrtc
+            CFBundleURLSchemes:
+              - olcrtc
+              # #111: subscription links — olcrtc-sub://host/path opens the
+              # app and imports the server list (docs/uri.md → Subscription
+              # links; payload format: olcrtc-upstream/docs/sub.md).
+              - olcrtc-sub
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.hotelk52339.olcrtc-ios
+        INFOPLIST_FILE: App/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: App/Entitlements.plist
+    preBuildScripts:
+      - name: "Parity: scripts/srv.sh vs olcrtc-upstream/install.sh (server-side only)"
+        script: |
+          python3 "$SRCROOT/scripts/parity_check.py"
+        basedOnDependencyAnalysis: false
+    resources: []
+    dependencies:
+      - framework: App/Mobile.xcframework
+        embed: true
+        codeSign: true
+      - sdk: libresolv.tbd
+      - sdk: libz.tbd
+      - package: Citadel
+      # #vpn: build + embed the packet-tunnel appex into PlugIns/ (XcodeGen
+      # embeds app-extension target dependencies there; explicit embed keeps
+      # the intent visible).
+      - target: olcrtc-tunnel
+        embed: true
+
+  olcrtc-ios-tests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: olcrtc-ios
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.hotelk52339.olcrtc-ios-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/olcrtc-ios.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/olcrtc-ios
+        BUNDLE_LOADER: $(TEST_HOST)
+
+  # #vpn: NEPacketTunnelProvider appex — system-VPN mode. Classic NSExtension
+  # (TN3134: iOS packet tunnels are app extensions), embedded into the app's
+  # PlugIns/ via the olcrtc-ios dependency above. Simulator CI compiles it but
+  # can never run it; on-device VPN needs a paid team (free-ID sideloads strip
+  # the NE entitlement and the app degrades to proxy-only at runtime).
+  olcrtc-tunnel:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Tunnel
+      # Shared providerConfiguration codec — the app target already compiles it
+      # via its App/ source tree.
+      - path: App/Models/VPNConfig.swift
+    info:
+      path: Tunnel/Info.plist
+      properties:
+        CFBundleDisplayName: olcOS Tunnel
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).PacketTunnelProvider"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.hotelk52339.olcrtc-ios.tunnel
+        INFOPLIST_FILE: Tunnel/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Tunnel/Entitlements.plist
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        # REQUIRED: VPNConfig's OlcrtcConnection bridge is compiled out of the
+        # extension via #if !OLCRTC_TUNNEL_EXTENSION; $(inherited) keeps the
+        # per-config DEBUG condition.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OLCRTC_TUNNEL_EXTENSION"
+    dependencies:
+      # gomobile emits a STATIC framework — the extension links its own copy
+      # (embedding would duplicate the archive the app bundle already carries).
+      - framework: App/Mobile.xcframework
+        embed: false
+      - sdk: NetworkExtension.framework
+      - sdk: libresolv.tbd
+      - sdk: libz.tbd

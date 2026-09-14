@@ -1,0 +1,259 @@
+# A single test/build/cache definition prevents CI and release from drifting.
+name: olcOS tested build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Exact commit to build (empty uses caller ref)
+        type: string
+        default: ''
+      release-tag:
+        description: Validated tag; nonempty also prepares release support assets
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  source-tests:
+    # Server scripts target Linux (including GNU sed); do not run their
+    # behavioral regressions against macOS's incompatible BSD utilities.
+    name: Python source, server and release contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned source and upstream
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Python source and release contracts
+        run: |
+          python3 -m unittest discover -s Tests -p 'test_*.py' -v
+          python3 -m unittest discover -s scripts -p 'test_*.py' -v
+          python3 scripts/parity_check.py --selftest
+          python3 scripts/parity_check.py
+
+      - name: Validate release version
+        if: inputs.release-tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.release-tag }}
+        run: python3 scripts/cut-release.py --check-tag "$RELEASE_TAG"
+
+  build:
+    name: Go, XCTest and unsigned IPA
+    needs: source-tests
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - name: Checkout pinned source and upstream
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: recursive
+          persist-credentials: false
+
+      # Resolve before go mod tidy generates an uncommitted go.sum.
+      - name: Resolve framework inputs and Xcode
+        id: framework
+        run: |
+          echo "source=$(bash scripts/fetch-framework.sh --cache-key)" >> "$GITHUB_OUTPUT"
+          echo "xcode=$(xcodebuild -version | shasum -a 256 | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          xcodebuild -version
+
+      - name: Restore exact framework
+        id: fwcache
+        uses: actions/cache/restore@v5
+        with:
+          path: App/Mobile.xcframework
+          key: mobile-xcframework-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.framework.outputs.xcode }}-${{ steps.framework.outputs.source }}
+
+      # Tests never skip on a framework-cache hit.
+      - name: Set up pinned Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: olcrtc-upstream/go.mod
+          cache-dependency-path: |
+            olcrtc-upstream/go.sum
+            gomobile/go.mod
+
+      - name: Go tests
+        timeout-minutes: 20
+        run: |
+          mkdir -p build/logs
+          (cd gomobile && go mod tidy && go test -count=1 -timeout=10m ./...) 2>&1 | tee build/logs/go-wrapper.log
+          (cd olcrtc-upstream && go test -count=1 -timeout=10m ./...) 2>&1 | tee build/logs/go-upstream.log
+
+      - name: Build framework on cache miss
+        if: steps.fwcache.outputs.cache-hit != 'true'
+        timeout-minutes: 25
+        run: bash scripts/build-framework.sh 2>&1 | tee build/logs/framework-build.log
+
+      - name: Check device and simulator framework slices
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          root = Path("App/Mobile.xcframework")
+          with (root / "Info.plist").open("rb") as stream:
+              libraries = plistlib.load(stream)["AvailableLibraries"]
+          for variant in ("", "simulator"):
+              matches = [lib for lib in libraries if lib.get("SupportedPlatform") == "ios"
+                         and lib.get("SupportedPlatformVariant", "") == variant
+                         and "arm64" in lib["SupportedArchitectures"]]
+              if not matches:
+                  raise SystemExit(f"Missing iOS {variant or 'device'} arm64 slice")
+              for lib in matches:
+                  if not (root / lib["LibraryIdentifier"] / lib["LibraryPath"] / "Mobile").is_file():
+                      raise SystemExit("Missing Mobile framework binary")
+          PY
+
+      # Persist the independently built/validated framework now, not only in
+      # a successful end-of-job hook: later Swift/XCTest failures must not
+      # discard this expensive cache. A cache is not a release/test verdict.
+      - name: Save validated framework before native build
+        if: steps.fwcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        timeout-minutes: 10
+        with:
+          path: App/Mobile.xcframework
+          key: ${{ steps.fwcache.outputs.cache-primary-key }}
+
+      - name: Install XcodeGen
+        run: command -v xcodegen || brew install xcodegen
+
+      - name: Generate native project and plists
+        id: generate
+        run: xcodegen generate --spec project.yml
+
+      - name: Preserve regenerated plists for maintainer commit
+        if: always() && steps.generate.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: olcos-generated-plists
+          path: |
+            App/Info.plist
+            Tunnel/Info.plist
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build and run XCTest
+        timeout-minutes: 30
+        run: |
+          xcrun simctl list devices available --json > build/simulators.json
+          UDID="$(python3 - <<'PY'
+          import json
+          with open("build/simulators.json") as stream:
+              runtimes = json.load(stream)["devices"]
+          phones = [device for runtime, devices in runtimes.items() if ".iOS-" in runtime
+                    for device in devices if device.get("isAvailable") and device["name"].startswith("iPhone")]
+          if not phones:
+              raise SystemExit("No available iPhone simulator")
+          print(phones[0]["udid"])
+          PY
+          )"
+          echo "Testing on iPhone simulator $UDID"
+          # Preserve periodic memory/process evidence even when a compiler
+          # stops producing output; this monitor never substitutes for tests.
+          (
+            while true; do
+              {
+                date -u
+                sysctl hw.memsize hw.ncpu
+                vm_stat
+                ps -axo pid,ppid,%cpu,%mem,rss,etime,comm | sort -nrk5 | sed -n '1,18p'
+              } 2>&1 | tee -a build/logs/xctest-resources.log
+              sleep 60
+            done
+          ) &
+          MONITOR_PID=$!
+          trap 'kill "$MONITOR_PID" 2>/dev/null || true' EXIT
+          # Keep Xcode's simulator ad-hoc signing: hosted Keychain tests need
+          # a signed identity. Only the separately packaged device IPA is unsigned.
+          xcodebuild test \
+            -quiet -showBuildTimingSummary \
+            -jobs 2 \
+            -parallel-testing-enabled NO \
+            -maximum-concurrent-test-simulator-destinations 1 \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 60 \
+            -maximum-test-execution-time-allowance 120 \
+            -project olcrtc-ios.xcodeproj \
+            -scheme olcrtc-ios-tests \
+            -destination "platform=iOS Simulator,id=$UDID,arch=$(uname -m)" \
+            -destination-timeout 120 \
+            -derivedDataPath build/simulator \
+            -resultBundlePath build/tests.xcresult \
+            ONLY_ACTIVE_ARCH=YES \
+            2>&1 | tee build/logs/xctest.log
+
+      - name: Package unsigned device IPA
+        timeout-minutes: 25
+        run: bash scripts/package-ipa.sh
+
+      - name: Prepare release framework, provenance and checksums
+        if: inputs.release-tag != ''
+        env:
+          INPUT_SHA256: ${{ steps.framework.outputs.source }}
+          RELEASE_TAG: ${{ inputs.release-tag }}
+        run: |
+          # Dereference symlinks: the downloader deliberately refuses symlink entries.
+          (cd App && zip -qr ../Mobile.xcframework.zip Mobile.xcframework)
+          unzip -tq Mobile.xcframework.zip
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          data = {
+              "input_sha256": os.environ["INPUT_SHA256"],
+              "commit": git("rev-parse", "HEAD"),
+              "upstream_commit": git("-C", "olcrtc-upstream", "rev-parse", "HEAD"),
+              "tag": os.environ["RELEASE_TAG"],
+              "repository": os.environ["GITHUB_REPOSITORY"],
+          }
+          Path("framework-provenance.json").write_text(json.dumps(data, indent=2) + "\n")
+          PY
+          shasum -a 256 olcos-ios-unsigned.ipa Mobile.xcframework.zip framework-provenance.json > SHA256SUMS
+
+      - name: Upload tested unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: olcos-ios-unsigned.ipa
+          path: olcos-ios-unsigned.ipa
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload release support assets
+        if: inputs.release-tag != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: olcos-release-support
+          path: |
+            Mobile.xcframework.zip
+            framework-provenance.json
+            SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: olcos-build-diagnostics
+          path: |
+            build/logs/
+            build/*.xcresult
+            build/simulators.json
+          if-no-files-found: warn
+          retention-days: 14

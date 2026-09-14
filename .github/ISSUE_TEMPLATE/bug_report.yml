@@ -1,0 +1,124 @@
+name: Bug report
+description: Report a reproducible olcOS iOS problem with safe diagnostic context.
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reports in Russian, English or French are welcome.
+        Search existing issues first. You do not need to prove whether the app or core is responsible.
+        **Security issue? Do not publish it here.** Use [private reporting](https://github.com/Hotelk52339/olcos-ios/security/advisories/new) and read [SECURITY.md](https://github.com/Hotelk52339/olcos-ios/blob/main/SECURITY.md).
+        Never include credentials, private keys, tokens, cookies, complete connection/subscription links, QR codes or real IPs.
+  - type: input
+    id: version
+    attributes:
+      label: App version and build
+      description: Copy both values from the app; include a commit if using a local build.
+      placeholder: "1.0 (build 1)"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and iOS version
+      placeholder: "iPhone model / iOS version, or simulator"
+    validations:
+      required: true
+  - type: input
+    id: signing
+    attributes:
+      label: Installation and signing
+      description: Xcode, release IPA and re-signing tool, or other. State signing/capability evidence if known; never share Apple ID or certificates.
+      placeholder: "Installation method; signing type or unknown; VPN permission result"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Selected connection mode
+      options:
+        - Automatic
+        - VPN
+        - SOCKS5
+        - Unknown / not applicable
+    validations:
+      required: true
+  - type: input
+    id: actual_mode
+    attributes:
+      label: Actual backend and fallback reason
+      description: What the interface showed, not what you expected. Use unknown or not applicable if needed.
+      placeholder: "VPN / SOCKS5 / unknown; reason shown if Automatic fell back"
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: App language
+      options:
+        - Russian (RU)
+        - English (EN)
+        - French (FR)
+        - Unknown / not applicable
+    validations:
+      required: true
+  - type: dropdown
+    id: carrier
+    attributes:
+      label: WebRTC carrier
+      options:
+        - telemost
+        - wbstream
+        - jitsi
+        - Other / unknown / not applicable
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport
+      options:
+        - datachannel
+        - vp8channel
+        - seichannel
+        - videochannel
+        - Other / unknown / not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps, expected result and actual result
+      description: Include frequency and whether this followed lock/unlock, a network change, foreground return or disconnect. Explain how the connection was added without sharing the link.
+      placeholder: |
+        Steps:
+        Expected:
+        Actual:
+        Reproduces:
+    validations:
+      required: true
+  - type: textarea
+    id: network
+    attributes:
+      label: Non-identifying network context
+      description: Optional Wi-Fi/cellular, IPv4/dual-stack if known, another active VPN, DNS format or custom tuning. Do not include real IPs, precise location or account details.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs and evidence
+      description: A narrow time window and relevant OLC codes help. Inspect all text/images yourself. If safe logs are unavailable, explain that; do not expose secrets to complete this field.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the report and attachments for secrets, working links, QR codes and real IPs.
+          required: true
+        - label: I distinguish observed results from assumptions and do not claim tests I did not run.
+          required: true
