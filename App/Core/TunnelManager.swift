@@ -1043,12 +1043,15 @@ final class TunnelManager: ObservableObject {
     /// `VPNController`. From here on, NEVPNStatus observation drives the state
     /// machine — this method only reports synchronous validation/start errors.
     private func startVPN(record: ConnectionRecord) {
-        guard case .olcrtc(let params) = record.details else {
+        guard case .olcrtc(let stored) = record.details else {
             // Unreachable today (.olcrtc is the only ConnectionDetails case) —
             // defensive so a future protocol can't silently fall through.
             state = .failed(L10n.stateConnectFailed.localized())
             return
         }
+        // The appex has no access to this app's defaults, so the `default`
+        // placeholder is resolved HERE, before the config crosses over.
+        let params = DeviceIdentity.resolving(stored)
         // boc #470: the VPN branch skipped both halves of the proxy `preflight`.
         // (1) No `startSession`, so a VPN-only user had NO connection log file —
         // every line stayed memory-only and vanished with the process. (2) No

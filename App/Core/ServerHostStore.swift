@@ -14,6 +14,40 @@ final class ServerHostStore: ObservableObject {
     private var isLoading = false // #482: decoding is not an explicit edit.
     private let defaults: UserDefaults // #482: isolated persistence tests.
 
+    // MARK: Resolved-secret cache (round 2, D)
+    //
+    // `secret(for:)` is what every SSH pass on the Servers tab resolves first,
+    // and it was ALSO reached from the card's render path (ServersView
+    // `menuItems` → `shareRequest` → `fullAccessPayload`), which meant one or
+    // two synchronous `SecItemCopyMatching` calls per host per body
+    // evaluation. The render path no longer asks for the secret at all; the
+    // async paths still do, once per host per pass, so the resolved value is
+    // kept HERE, in memory only, after the first successful read:
+    //  • memory-only — never encoded, never logged, never in UserDefaults;
+    //  • keyed by host id AND auth method, so a method switch is a miss;
+    //  • only a HIT is cached — a miss (Keychain still locked right after a
+    //    reboot, entry wiped) is re-asked next time, so nothing is ever
+    //    remembered as "absent";
+    //  • dropped on every write or removal below, and on `invalidateSecrets()`
+    //    (once per foreground, from the tab that owns the store).
+    private struct SecretCacheKey: Hashable {
+        let id: UUID
+        let method: SSHAuthMethod? // `ServerHost.authMethod` is optional (nil = legacy password host)
+    }
+    private var secretCache: [SecretCacheKey: SSHSecret] = [:]
+
+    /// Forget every resolved credential; the next `secret(for:)` re-reads the
+    /// Keychain. Called once per foreground so a credential changed by another
+    /// process (or a Keychain that became readable after first unlock) is
+    /// picked up without a per-render read.
+    func invalidateSecrets() {
+        secretCache.removeAll()
+    }
+
+    private func forgetSecret(for host: ServerHost) {
+        secretCache = secretCache.filter { $0.key.id != host.id }
+    }
+
     private let storeKey = "olcrtc_server_hosts"
     private static let keychainService = "olcrtc.serverhost.password"
     // #451: SSH private-key auth. Same per-host account key (id.uuidString) as
@@ -62,6 +96,7 @@ final class ServerHostStore: ObservableObject {
                 ((password ?? "").isEmpty ? "" : " (password changed)"))
         }
         if let pw = password, !pw.isEmpty {
+            forgetSecret(for: host)
             KeychainHelper.set(pw, service: Self.keychainService, account: host.id.uuidString)
         }
     }
@@ -79,6 +114,7 @@ final class ServerHostStore: ObservableObject {
     }
 
     private func writeSecret(_ secret: SSHSecret, for host: ServerHost) {
+        forgetSecret(for: host)
         let account = host.id.uuidString
         switch secret {
         case .password(let pw):
@@ -98,6 +134,7 @@ final class ServerHostStore: ObservableObject {
     func remove(at idx: IndexSet) {
         let removed = idx.compactMap { hosts.indices.contains($0) ? hosts[$0] : nil }
         for h in removed {
+            forgetSecret(for: h)
             // #451: sweep every credential service, whatever authMethod says —
             // a method switch may have left entries under the other services.
             KeychainHelper.delete(service: Self.keychainService,     account: h.id.uuidString)
@@ -140,7 +177,18 @@ final class ServerHostStore: ObservableObject {
     /// #451: the host's full SSHSecret, resolved per `authMethod`. nil when
     /// the Keychain has no entry (never saved / wiped) — callers surface the
     /// method-appropriate "credential missing" message.
+    /// Served from the in-memory cache after the first successful read (see
+    /// the cache notes at the top of the class); a miss is never cached.
     func secret(for host: ServerHost) -> SSHSecret? {
+        let key = SecretCacheKey(id: host.id, method: host.authMethod)
+        if let cached = secretCache[key] { return cached }
+        guard let resolved = readSecret(for: host) else { return nil }
+        secretCache[key] = resolved
+        return resolved
+    }
+
+    /// The uncached Keychain read behind `secret(for:)`.
+    private func readSecret(for host: ServerHost) -> SSHSecret? {
         if host.authMethod == .privateKey {
             guard let key = KeychainHelper.get(service: Self.privateKeyService,
                                                account: host.id.uuidString) else { return nil }

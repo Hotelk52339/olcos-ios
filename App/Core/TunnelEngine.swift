@@ -211,9 +211,12 @@ final class OlcrtcEngine: TunnelEngine, @unchecked Sendable {
     // eoc #470
 
     func start(_ details: ConnectionDetails, port: Int, settings s: EngineStartSettings) async throws {
-        guard case .olcrtc(let params) = details else {
+        guard case .olcrtc(let stored) = details else {
             throw TunnelEngineError("internal: OlcrtcEngine received non-olcrtc details", reason: .unknown)   // #456
         }
+        // The record keeps the `default` placeholder; the room hears THIS
+        // install's own id (see DeviceIdentity).
+        let params = DeviceIdentity.resolving(stored)
         await MainActor.run {
             LogStore.shared.log(.connection,
                 L10n.connectingOlcrtc_fmt.formatted(params.carrier, params.transport, params.clientID),
@@ -353,7 +356,8 @@ final class OlcrtcEngine: TunnelEngine, @unchecked Sendable {
     }
 
     func ping(_ details: ConnectionDetails, settings s: EngineProbeSettings) async -> PingOutcome {
-        guard case .olcrtc(let params) = details else { return .failure(L10n.pingFailed.localized()) }
+        guard case .olcrtc(let stored) = details else { return .failure(L10n.pingFailed.localized()) }
+        let params = DeviceIdentity.resolving(stored)
         guard let port = PortAvailability.freeEphemeralPort() else {
             return .failure(L10n.pingNoFreePort.localized())
         }
@@ -394,7 +398,8 @@ final class OlcrtcEngine: TunnelEngine, @unchecked Sendable {
     }
 
     func checkReady(_ details: ConnectionDetails, settings s: EngineProbeSettings) async -> PingOutcome {
-        guard case .olcrtc(let params) = details else { return .failure(L10n.pingFailed.localized()) }
+        guard case .olcrtc(let stored) = details else { return .failure(L10n.pingFailed.localized()) }
+        let params = DeviceIdentity.resolving(stored)
         guard let port = PortAvailability.freeEphemeralPort() else {
             return .failure(L10n.pingNoFreePort.localized())
         }

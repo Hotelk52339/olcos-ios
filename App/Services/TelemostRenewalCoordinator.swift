@@ -86,6 +86,10 @@ final class TelemostRenewalCoordinator: ObservableObject {
         var records: @MainActor () -> [ConnectionRecord]
         var update: @MainActor (ConnectionRecord) -> Void
         var target: @MainActor (ConnectionRecord) -> Target?
+        /// Whether ANY saved server links this record — weaker than `target`
+        /// (which also needs a usable secret and trust state). False means the
+        /// record came from another device and its room is renewed there.
+        var isLinked: @MainActor (ConnectionRecord) -> Bool = { _ in true }
         var engagedRecord: @MainActor () -> ConnectionRecord?
         var isConnectedProxy: @MainActor () -> Bool
         var lastActivity: @MainActor () -> Date?
@@ -122,6 +126,8 @@ final class TelemostRenewalCoordinator: ObservableObject {
     }
 
     private var dismissed: [UUID: NoticeKey] = [:]
+    /// Records already logged as "renewed elsewhere" — one line, not one per pass.
+    private var unmanagedLogged: Set<UUID> = []
     private var presented: NoticeKey?
     /// A pending entry blocks unattended retries until explicitly reconciled.
     @Published private(set) var pendingRenewals: [UUID: PendingRenewal]
@@ -145,9 +151,8 @@ final class TelemostRenewalCoordinator: ObservableObject {
             records: { connections.connections },
             update: { connections.update($0) },
             target: { record in
-                guard let host = hosts.hosts.first(where: {
-                    $0.lastConnectionID == record.id || ($0.extraConnectionIDs ?? []).contains(record.id)
-                }), let secret = hosts.secret(for: host),
+                guard let host = hosts.hosts.first(where: { $0.links(record.id) }),
+                      let secret = hosts.secret(for: host),
                 // Automatic first trust is allowed. Reject invalid/corrupt
                 // identity metadata before creating a room; SSHRunner validates
                 // the actual presented key before applying it.
@@ -157,6 +162,7 @@ final class TelemostRenewalCoordinator: ObservableObject {
                 else { return nil }
                 return Target(host: host, secret: secret, container: container)
             },
+            isLinked: { record in hosts.hosts.contains { $0.links(record.id) } },
             engagedRecord: { tunnel.engagedRecord },
             isConnectedProxy: { tunnel.state.isConnected && tunnel.activeMode == .proxy },
             lastActivity: { TunnelManager.lastTunnelActivityDate },
@@ -309,6 +315,19 @@ final class TelemostRenewalCoordinator: ObservableObject {
             // A changed saved room is an explicit reconciliation, not a timer.
             pendingRenewals[record.id] = nil
             environment.savePending(pendingRenewals)
+        }
+        // A record no saved server links to was imported from another device
+        // (QR / shared link). Its room is renewed by the owner of that server,
+        // not by this phone — there is nothing here for the user to "set up".
+        // Nagging about it is what the second phone reported as
+        // "Обновление Телемоста требует внимания" on a link it just scanned.
+        guard environment.isLinked(record) else {
+            if !unmanagedLogged.contains(record.id) {
+                unmanagedLogged.insert(record.id)
+                LogStore.shared.log(.provisioning,
+                    "Telemost room for \(record.name) is renewed by the server owner (no linked server here)")
+            }
+            return false
         }
         // #480 was: .ageUnknown was grouped with .doNothing.
         if case .olcrtc(let params) = record.details, params.roomCreatedAt == nil {

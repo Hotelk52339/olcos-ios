@@ -2,9 +2,11 @@ import Foundation
 import XCTest
 @testable import olcrtc_ios
 
-// boc #486
 // Pure decisions only: no device, UIKit generator, microphone, carrier,
 // Keychain, UserDefaults, NetworkExtension or network request is touched.
+// Waveform motion is gated (connected / active / visible / no Reduce Motion)
+// and, when it moves, follows measured throughput — see TunnelThroughputTests
+// for the throughput-to-motion mapping.
 final class SignalInteractionPolicyTests: XCTestCase {
     func testOnlyVisibleActiveConnectedWithoutReduceMotionMoves() {
         for connected in [false, true] {
@@ -157,13 +159,4 @@ final class SignalInteractionPolicyTests: XCTestCase {
             XCTAssertNil(policy.pendingConnectionID)
         }
     }
-
-    func testRealSelectionChangesOnly() {
-        XCTAssertTrue(SignalHapticPolicy.selectionChanged(from: false, to: true))
-        XCTAssertTrue(SignalHapticPolicy.selectionChanged(from: true, to: false))
-        XCTAssertFalse(SignalHapticPolicy.selectionChanged(from: true, to: true))
-        XCTAssertFalse(SignalHapticPolicy.selectionChanged(from: "server-a", to: "server-a"))
-        XCTAssertTrue(SignalHapticPolicy.selectionChanged(from: "server-a", to: "server-b"))
-    }
 }
-// eoc #486

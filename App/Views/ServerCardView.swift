@@ -1,71 +1,27 @@
 import SwiftUI
 
-// MARK: - ServerCardView (#457)
+// MARK: - ServerCardView
 //
-// #457: one VPS card, cut out of `ServersView` (`hostCard` / `hostCardTop` /
-// `hostCardBottom` / `statusRegion` / `processCaption` / `metricsStrip` /
-// `actionBar` / `primaryButton` / `protocolsSection` / `healthSweepFooter`).
-// ServersView has hit the Swift type-checker's expression budget twice, so the
-// card is a small value-driven struct: every input is a plain value or a
-// closure, explicitly typed, and every sub-view here stays under ~20 lines.
+// One VPS card. ServersView has hit the Swift type-checker's expression
+// budget more than once, so the card is a small value-driven struct: every
+// input is a plain value or a closure, explicitly typed, and every sub-view
+// stays short.
 //
-// Reading order on the card is the order of the questions the owner asks:
-//   1 which server is this        → header (+ the machine, as ONE caption)
-//   2 what is true right now      → the status pill, and nothing else
-//   3 what runs on it, does it work → PROTOCOLS (the content)
-//   4 what do I do next           → ONE full-width action
-//   5 what else can I do to it    → "Logs" / "Manage ›", one row of links
-//
-// boc #471: five answers, not six — and each of them stated ONCE. The card used
-// to say its one claim three times (pill → `readStamp` → `failureBanner`), its
-// one age three times (pill subtitle, read stamp, each row's chip) and a
-// millisecond value twice in two different units (the health chip's end-to-end
-// latency, and PING — a TCP-22 round-trip — in the metrics grid beside it).
-// What left the card in this pass, and where each fact went:
-//   • `readStamp` → `HostHeadline.reduce` dates the claim it qualifies;
-//   • `failureBanner` → the same headline's tally ("2 of 2 protocols
-//     verified 2 min ago"), so "Working" and "not working" never share a card;
-//   • `ServerMetricsGrid` → one tertiary caption under the address
-//     (disk / RAM / uptime) plus read-only rows on the Manage screen;
-//   • PING → the Manage screen only. The pill's `.unreachable` state already
-//     says whether the host answers, and a TCP-22 round-trip is not a user
-//     fact — it only ever contradicted the verified latency on the row below;
-//   • `quickRow` → a text link beside "Manage ›", so the card ends on ONE
-//     filled button instead of three action treatments.
-// eoc #471
-//
-// boc #459: the card grows into the empty half of the Servers screen instead of
-// something new being invented to fill it — 20pt between blocks, roomier
-// protocol rows, and the affordances the owner reached for most often (Container
-// logs, the primary verb, and the way to everything else) visible on the card
-// rather than buried in a 13-item ⋯ menu.
-// #461 was: "the four affordances", Check server among them — it duplicated
-// pull-to-refresh, so it is gone (ServersView.quickActions).
-// #471 was: "roomier protocol rows" meant each row drew its own plate; and the
-// last of the promoted affordances (Container logs) was still a full-width
-// button. Rows separate with a hairline now and the verb is a link.
-// What LEFT the card in the same pass:
-//   • the process caption ("Server process is running · read 2m ago") — it
-//     restated the status pill and each protocol row already says whether its
-//     own container is up. Only its AGE was load-bearing, so the age survives
-//     as the read stamp — on the metrics block then, under the status pill
-//     since #461, and nothing else of it does.
-//   • the sweep note ("N more not checked — tap Verify all") — a footnote
-//     advertising a button that pull-to-refresh replaces. Every skipped
-//     protocol still says "not checked" in its own chip, which is the same
-//     fact stated per item instead of in aggregate.
-// eoc #459
-//
-// #457 was: four unlabelled 44pt icon buttons (antenna / arrow.down.doc /
-// slider.horizontal.3 / RobotIcon) squeezing the primary action into a fifth of
-// the row. Every one of them duplicated an item that is already in the overflow
-// menu, so deleting them costs nothing and buys the primary action its width.
+// Reading order on the card is the order of the questions the owner asks,
+// each answered once:
+//   1 which server is this          → header (+ the machine, as one caption)
+//   2 what is true right now        → the status headline, dated, with a quiet
+//                                     "updating…" note while a re-read runs
+//   3 what runs on it, does it work → protocol rows, one per protocol
+//   4 what do I do next             → one full-width action
+//   5 what else can I do to it      → "Logs" / "Manage ›", one row of links
+// Machine numbers (disk / RAM / uptime / ping) live on the Manage screen.
 
-/// #457: the primary action a card is allowed to offer. The rule the old
-/// `primaryButton` broke: never offer an action no evidence justifies. A server
-/// nothing has ever read (`HostBase.unknown`) gets **Check server**, never
-/// Install — `scripts/srv.sh` force-removes every `olcrtc-server-*` container,
-/// so one tap on a re-added VPS used to destroy a working deployment.
+/// The primary action a card is allowed to offer: never one no evidence
+/// justifies. A server nothing has ever read (`HostBase.unknown`) gets
+/// **Check server**, never Install — `scripts/srv.sh` force-removes every
+/// `olcrtc-server-*` container, so Install on a re-added VPS would destroy a
+/// working deployment.
 enum ServerPrimaryAction: Equatable {
     case busy, retry, check, start, stop, install
 
@@ -161,7 +117,8 @@ struct ServerCardView: View {
     /// answered. Built from the same `shortUsage` / `shortRAM` / `shortUptime`
     /// statics `VPSStatFormattingTests` pins by name.
     let machineLine: String
-    // eoc #471
+    /// A background re-read is running while the card shows its last snapshot.
+    var isRefreshing: Bool = false
     let rows: [SSHRunner.CarrierInfo]
     /// A protocol-level op (add / remove / sibling start-stop) is in flight.
     let rowsBusy: Bool
@@ -306,6 +263,7 @@ struct ServerCardView: View {
         VStack(alignment: .leading, spacing: Theme.Metrics.s3) {
             ServerSignalStatus(tone: headline.tone, title: headline.title,
                                subtitle: headline.subtitle, isBusy: isBusy)
+            if isRefreshing, !isBusy { ServerRefreshingNote() }
             if let progress {
                 ProgressView(value: progress)
                     .tint(Theme.Signal.stroke)

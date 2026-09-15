@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - UpdateAvailableSheet (#360)
+// MARK: - UpdateAvailableSheet
 //
 // Presented from the App root when `UpdateChecker` finds a newer GitHub
 // release. CHECK-AND-LINK ONLY — a sandboxed sideload can't update itself, so
@@ -20,13 +20,12 @@ struct UpdateAvailableSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Metrics.s4) {   // #471: B9 — 16 → s4
+                VStack(alignment: .leading, spacing: Theme.Metrics.s4) {
                     Text(L10n.updateAvailableBody.localized())
-                        // #471: B9 — prose is step 3. was: .font(.subheadline)
                         .font(Theme.Typography.body)
                         .foregroundStyle(Theme.Palette.textSecondary)
 
-                    VStack(spacing: Theme.Metrics.s2) {   // #471: B9 — 8 → s2
+                    VStack(spacing: Theme.Metrics.s2) {
                         // Release page — a plain https link, always present.
                         OlcButton(L10n.updateOpenReleasePage.localized(),
                                   systemImage: "safari", role: .primary, fillWidth: true) {

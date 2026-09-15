@@ -13,13 +13,16 @@ Start with the [product overview](../README.md), then choose a guide:
 | [Contributing](../CONTRIBUTING.md) | Pull requests, style and verification evidence |
 | [Technical contract](../AGENTS.md) | Essential constraints for repository changes |
 
-The public product name is **olcOS**, release **1.0 (build 1)**, with tag
-`v1.0.1`. Internal targets and URI schemes retain their compatible `olcrtc`
+The public product name is **olcOS**, release **2.0 (build 2)**, with tag
+`v2.0.2`. Internal targets and URI schemes retain their compatible `olcrtc`
 names; this is not a separate protocol. [Project](../project.yml) · [URI implementation](../App/Models/OlcrtcURI.swift).
 
-The header artwork in `assets/olcos-preview.png` is a **UI concept preview**,
-not a native screenshot, benchmark or test result. Android, Windows and macOS
-are plans only.
+The header artwork in `assets/olcos-preview.png` (Russian) and
+`assets/olcos-preview-en.png` (English) is a **UI concept preview**,
+not a native screenshot, benchmark or test result. It is drawn from the
+current screens and localized strings of the app, including the beam and
+stone-wall hero; the HTML source and render script live in `assets/src/`.
+Android, Windows and macOS are plans only.
 
 The underlying WebRTC core is the separate
 [openlibrecommunity/olcrtc project](https://github.com/openlibrecommunity/olcrtc).

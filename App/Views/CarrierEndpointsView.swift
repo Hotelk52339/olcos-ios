@@ -1,25 +1,18 @@
 import SwiftUI
 
-// #491: native Signal endpoint Form; copy/resolve methods and automatic probe scope stay unchanged.
-
-// MARK: - CarrierEndpointsView (#406 — was #328's inline Connections card)
+// MARK: - CarrierEndpointsView
 //
 // Opened from Connections → Diagnostics → "Using another proxy app?" while a
-// tunnel is up (#460 was: a row titled "Carrier endpoints", which named the
-// mechanism rather than the situation, so nobody could tell whether it applied
-// to them). Shows the carrier base host (derived from the connection params) plus its
-// freshly-resolved IP(s) — the endpoints an external proxy app (Shadowrocket
-// etc.) must route DIRECT so the olcrtc tunnel's own carrier traffic doesn't
-// loop back through the SOCKS port. Copy the host, an IP, or host + all IPs.
+// tunnel is up, and from Settings › Advanced › Servers. Shows the carrier base
+// host (derived from the connection params) plus its freshly-resolved IP(s) —
+// the endpoints an external proxy app (Shadowrocket etc.) must route DIRECT so
+// the tunnel's own carrier traffic does not loop back through the SOCKS port.
+// Copy the host, an IP, or host + all IPs. Owns its own resolve state (IPs
+// rotate, so it re-resolves on demand).
 //
-// #406 was: an always-on Section in ConnectionsView that appeared the instant
-// the tunnel connected and shifted the whole screen. The exclusions are debug
-// info, not a permanent fixture, so they now live behind this on-demand sheet,
-// which owns its own resolve state (IPs rotate, so it re-resolves on demand).
-//
-// Accuracy honesty (unchanged from #328): Mobile.objc.h exposes no live ICE /
-// STUN / TURN endpoints, so this is the carrier base host + a resolver pass, a
-// best-effort hint — not the addresses the running session actually negotiated.
+// Accuracy: the Go core exposes no live ICE / STUN / TURN endpoints, so this is
+// the carrier base host + a resolver pass — a best-effort hint, not the
+// addresses the running session actually negotiated.
 
 struct CarrierEndpointsView: View {
     let params: OlcrtcConnection
@@ -34,8 +27,6 @@ struct CarrierEndpointsView: View {
 
     var body: some View {
         NavigationStack {
-            // boc #491: clear native sections instead of nested cards in a ScrollView.
-            // #491 was: lead-in, host/IP/copy card, then a loose footnote.
             Form {
                 Section {
                     leadIn
@@ -75,10 +66,6 @@ struct CarrierEndpointsView: View {
                 }
             }
             .signalFormChrome()
-            // eoc #491
-            // #460 was: `carrierEndpointsTitle` ("Carrier endpoints") — the
-            // vocabulary of the person who built it, not of the person who needs
-            // it. The title now names the action the screen exists to support.
             .navigationTitle(L10n.carrierEndpointsScreenTitle.localized())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -92,46 +79,34 @@ struct CarrierEndpointsView: View {
         .task { if let host, ips.isEmpty { await resolve(host) } }
     }
 
-    /// #460: the "is this screen for me?" paragraph. Plain prose, no card — it is
-    /// read once and then ignored by everyone whose phone has only olcrtc on it.
+    /// The "is this screen for me?" paragraph. Plain prose, read once.
     private var leadIn: some View {
         Text(L10n.carrierEndpointsLead.localized())
-            // #471: B9 — prose is step 3, never a raw `.subheadline`.
             .font(Theme.Typography.body)
             .foregroundStyle(Theme.Palette.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 4)
     }
 
     /// One copyable endpoint: label + monospaced value + a copy button.
     private func endpointRow(label: String, value: String) -> some View {
-        HStack(spacing: Theme.Metrics.s2) {   // #471: B9 — 8 → s2
-            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {   // #471: 2 → s1
+        HStack(spacing: Theme.Metrics.s2) {
+            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
                 Text(label)
-                    // #471: B9 — this is a field label above a value (the
-                    // `OlcMetric` shape), not a section header, so it takes step
-                    // 5 semibold rather than `OlcSectionHeader`.
-                    // #471 was: .font(.caption2.weight(.semibold))
                     .font(Theme.Typography.captionStrong)
-                    // #491 was: uppercase tertiary label.
                     .foregroundStyle(Theme.Palette.textSecondary)
                 Text(value)
-                    // #471: B9 — an address is step 6, via its token.
-                    // #471 was: .font(.system(.caption, design: .monospaced))
                     .font(Theme.Typography.mono)
                     .foregroundStyle(Theme.Palette.textPrimary)
                     .textSelection(.enabled)
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.Metrics.s2)
             copyButton { copy(value) }
-                .accessibilityValue(value) // #491: distinguish copy targets in VoiceOver.
+                .accessibilityValue(value)
         }
     }
 
-    /// The resolved-IPs row: a re-resolve action + each IP copyable.
-    // boc #491: each resolver result is an independent native Form row.
-    // #491 was: header, refresh, status and every address shared one VStack/card row.
+    /// The resolved-IPs rows: a re-resolve action, then each IP copyable.
     @ViewBuilder
     private func resolvedIPsRow(host: String) -> some View {
         Button {
@@ -165,28 +140,23 @@ struct CarrierEndpointsView: View {
             }
         }
     }
-    // eoc #491
 
     private func copyButton(_ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "doc.on.doc")
-                // #471: B9 — one of the two fixed point sizes left in the app
-                // after #457; a fixed size ignores Dynamic Type, so the glyph
-                // stayed put while the row around it grew.
-                // #471 was: .font(.system(size: 15, weight: .semibold))
                 .font(Theme.Typography.bodyStrong)
                 .foregroundStyle(Theme.Palette.accent)
-                .frame(minWidth: Theme.Metrics.rowMinHeight, minHeight: Theme.Metrics.rowMinHeight) // #491
+                .frame(minWidth: Theme.Metrics.rowMinHeight, minHeight: Theme.Metrics.rowMinHeight)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless) // #491: independent copy buttons within native rows.
+        .buttonStyle(.borderless)
         .accessibilityLabel(L10n.copyURIAction.localized())
     }
 
     /// Copies one value (host or IP) and logs it.
     private func copy(_ value: String) {
         UIPasteboard.general.string = value
-        Haptics.success()   // #455: copy confirmation
+        Haptics.success()
         LogStore.shared.log(.connection, L10n.carrierEndpointCopied_fmt.formatted(value))
     }
 
@@ -194,7 +164,7 @@ struct CarrierEndpointsView: View {
     private func copyAll(host: String) {
         let all = ([host] + ips).joined(separator: "\n")
         UIPasteboard.general.string = all
-        Haptics.success()   // #455: copy confirmation
+        Haptics.success()
         LogStore.shared.log(.connection, L10n.carrierEndpointCopied_fmt.formatted(host))
     }
 

@@ -122,13 +122,15 @@ connection may establish new trust; the validator must never silently replace
 it. TOFU checks continuity after first use, not independently verified identity
 on the initial connection.
 [Trust policy](../App/Core/SSHHostKeyVerification.swift) ·
-[reset interface](../App/Views/AddServerHostView.swift).
+[reset interface](../App/Views/ServerAdvancedView.swift) (the “Manage server”
+screen shows the host-key reset only after a mismatch).
 
 First-use trust is saved before key validation succeeds. Trust is associated
 with the canonical host and port rather than a host-record UUID, so recreating
 a saved host does not clear it. Trust-store read/write failures stop the
 connection instead of accepting a key that cannot be remembered.
-[SSH trust implementation](../App/Core/SSHHostKeyVerification.swift).
+[Trust store](../App/Core/SSHHostKeyTrustStore.swift) ·
+[verification helpers](../App/Core/SSHHostKeyVerification.swift).
 
 Installation uploads/runs bundled scripts and parses their outputs; ordinary
 user traffic does not need an SSH session per request. `srv.sh` uses persistent
@@ -181,8 +183,44 @@ start cold from iOS Settings without app hydration.
 [provider guard](../Tunnel/PacketTunnelProvider.swift).
 
 The app, iOS, local clients, carrier/SFU, DNS resolver, VPS and destinations are
-separate trust boundaries. A successful local listener, decorative waveform or
+separate trust boundaries. A successful local listener, a broken firewall wall or
 one diagnostic probe is not a claim of anonymity or universal connectivity.
+
+### Hero picture and throughput policy
+
+The hero picture uses a stone masonry wall (86 extruded blocks in stretcher
+bond with three merlons). While connecting it only cracks and deforms; outgoing
+rays are gated by the actual connected state. The finite 3.6 s success
+sequence (stage fractions in `FirewallBeamModel.Stage`) grows a crack web over
+the whole front skin, lets eleven rays leave mortar joints at scattered
+moments and converge, forms a powerful beam, disperses the entire wall and
+finally settles the released beam into a braided seven-strand traffic line
+(`lineSettle`, connected only). Failure stretches the wall, turns the impact
+red and recoils to an intact static wall without an outgoing beam. Disconnect
+reverses the wall transition. `FirewallBeamModel` owns the pure state
+sequence; `FirewallArmorGeometry` lays the stones and depth-sorts the faces;
+`FirewallArmorRenderer` paints them with the beam behind and the crack web
+clipped to standing front faces. Steady connected particle pace, density,
+line amplitude and packet-train count follow measured throughput rather than
+invented traffic; the share of packet trains running back toward the device
+follows the measured ↓/↑ byte split (`ThroughputReading.inboundShare`, 0.5
+when only an estimate exists).
+`TunnelThroughputMonitor` samples ~1/s while the tunnel is connected, the view
+is on screen and the scene is active, and feeds an EMA (2 s time constant) so
+the motion breathes rather than jitters. Idle-connected reads as calm low
+motion; disconnected is flat and static. Sources: in VPN mode the packet tunnel
+provider counts bytes in the packet path and answers a versioned `stats` JSON
+message (`v: 1`, `rxBytes`/`txBytes`) over `sendProviderMessage` — an exact
+figure spoken to VoiceOver as ↓ ↑ (nothing is printed on screen). In SOCKS5 in-app mode the Go `mobile` runtime exposes no
+byte counters, so the app reads `lo0` interface byte deltas via `getifaddrs`
+while the loopback-only listener is active; this is an approximation (it
+includes any other loopback traffic) and is spoken as one "about" figure.
+Numbers are never invented: no counter, no spoken figure. Reduce Motion renders
+a settled static scene and keeps the numbers; every draw clock stops off screen and in the
+background. The readout is a rate, never a health verdict.
+[SignalWaveform](../App/Views/SignalWaveform.swift) ·
+[TunnelThroughput](../App/Services/TunnelThroughput.swift) ·
+[provider stats](../Tunnel/PacketTunnelProvider.swift).
 For practical limitations and private disclosure, see [SECURITY.md](../SECURITY.md).
 
 ## Keep these contracts aligned
@@ -200,6 +238,8 @@ For practical limitations and private disclosure, see [SECURITY.md](../SECURITY.
   live service status. [Matrix](../App/Utilities/CarrierTransportMatrix.swift) ·
   [HealthCoordinator](../App/Services/HealthCoordinator.swift).
 - Diagnostic code cases versus the [catalog](diagnostic-messages.md);
-  RU/EN/FR strings and extension resources; motion and haptics as interaction,
-  not invented telemetry. [OlcCode](../App/Services/OlcCode.swift) ·
+  RU/EN/FR strings and extension resources (edit them with
+  `scripts/dev/l10n.py`); hero motion from measured throughput only, haptics
+  as interaction, never invented telemetry.
+  [OlcCode](../App/Services/OlcCode.swift) ·
   [localization](../App/Localization/L10n.swift) · [motion policy](../App/Views/SignalWaveform.swift).

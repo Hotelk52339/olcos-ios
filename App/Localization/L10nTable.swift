@@ -63,13 +63,6 @@ enum L10nTable {
         .vpnSettingsEntryName:      "olcOS",
         .vpnCapabilityUnavailable_fmt: "The system rejected the VPN configuration (%@). This happens when VPN access was declined, or when the app was signed with a free Apple ID — the Network Extension entitlement requires a paid Apple Developer team. Proxy mode still works.",
 
-        // #453: auto-failover. #460: the control lives on the Connections
-        // screen now, so these two are the card's title and its condition line.
-        // #460 was: `.configFailoverExplainer` — "If the active protocol stops
-        // responding, automatically switch to another protocol running on the
-        // same server." Replaced by the one-line `connectAutoSwitchHint`.
-        .configFailoverToggle:       "Auto-switch protocols",
-        .configFailoverProxyOnlyFooter: "Applies in proxy mode.",
         .settingsRefreshOnEntryToggle:  "Check on opening",
         .settingsRefreshOnEntryExplainer: "When you open the app, re-check your servers and every protocol on them, so what you see is current. Anything checked in the last couple of minutes is left alone.",
         .failoverSwitching_fmt:      "Protocol %@ is failing — switching to %@",
@@ -85,7 +78,6 @@ enum L10nTable {
         // three raw ids and a carrier spelled unlike its own label, in the
         // footer under the picker that shows all four as words.
         // #470 was: "(VP8 only)" — the matrix enables Video for Telemost too (the chip right below was tappable).
-        .carrierChoiceFooter:        "Yandex Telemost is the hardest to block (VP8 recommended, Video also works). Jitsi with DataChannel is the fastest and most stable. WB Stream needs an account token.",
         // #460 was: `.configReliabilityHeader` ("Reliability") — its section
         // held only the auto-switch toggle, which moved to Connections.
         .unitSeconds:                "s",
@@ -146,7 +138,6 @@ enum L10nTable {
         .editConnectionTitle:        "Edit connection",
         .nameField:                  "Label",
         .namePlaceholder:            "My server",
-        .groupField:                 "Group",
         // #344 was: "Servers" — the Connections tab lists *connections*, not
         // servers (display-only; the persisted raw group value stays "Servers"
         // and is mapped via ConnectionRecord.displayGroupName).
@@ -156,9 +147,9 @@ enum L10nTable {
         .pasteURIAction:             "Paste URI",
         // #458 was: "Tap Paste …" — the button above reads "Paste URI"; a hint may
         // only use a control's OWN name (audit: every named control must exist).
-        .importHint:                 "Tap Paste URI to import a URI or a subscription from the clipboard, or Scan QR. The fields below fill in automatically.", // #381 was: "If you have a URI from the server — paste it here and tap «Parse». The fields below will be filled in automatically." — buttons are Scan QR / Paste (Paste also imports subscriptions since #361), there is no "Parse" button.
-        .clientIDFooter:             "Your device identifier in the room. 'default' works for single-device setups. Use a unique value when multiple devices share the same room.",
-        .keyPlaceholder:             "64-char hex key",
+        .importHint:                 "An olcrtc:// link fills the fields below. A subscription link or list opens the import.", // #381 was: "If you have a URI from the server — paste it here and tap «Parse». The fields below will be filled in automatically." — buttons are Scan QR / Paste (Paste also imports subscriptions since #361), there is no "Parse" button.
+        .clientIDFooter:             "Leave 'default' — each device then announces its own id, so one link works on several devices at once. Change it only if the server operator asked for a specific value.",
+        .keyPlaceholder:             "64 hex characters",
         .roomIDLabel:                "Room ID",
         .clientIDLabel:              "Client ID",
         .keyHexLabel:                "Key (hex)",
@@ -198,7 +189,7 @@ enum L10nTable {
         .actionUninstall:            "Remove all protocols from the server",
         // #471 was: "Update binary (fetch pinned build + rebuild)" — three build
         // steps to a reader who runs none of them. Name the software and the place.
-        .actionUpdate:               "Update olcOS on the server",
+        .actionUpdate:               "Update olcOS server side",
         .actionReboot:               "Reboot",
         .actionChangeRoomTransport:  "Change room / transport",
         .actionDone:                 "Done",
@@ -348,7 +339,7 @@ enum L10nTable {
         .wbTokenHeader:              "WB Stream token",
         .wbTokenFieldLabel:          "Account token (optional)",
         // #461 was: "wbstream" / "datachannel" — raw ids.
-        .wbTokenFooter:              "Paste the WB Stream account token. Leave empty for an anonymous guest; a token is required for DataChannel.",
+        .wbTokenFooter:              "WB Stream account token. Empty = guest (VP8, SEI, Video); DataChannel requires the token.",
 
         // SettingsView
         .settingsTitle:              "Settings",
@@ -366,7 +357,7 @@ enum L10nTable {
         .settingsSectionStart:       "Starting a connection",
         .settingsSectionStayConnected: "Staying connected",
         .settingsSectionSpeedTest:   "Speed test",
-        .settingsSectionUpdates:     "Updates",
+        .settingsSectionUpdates:     "App update",
         .sectionLogs:                "Logs",
         .sectionIPSources:           "IP-check sources",
         .ipSourcesFooter:            "Services queried by the IP check. The RU-zone options stay reachable when public resolvers are blocked. If none are selected, the defaults are used.",
@@ -381,7 +372,7 @@ enum L10nTable {
         // item is `actionChangeRoomTransport`, on the server card.
         // #461 was: "(vp8channel/sei/video)" and "to datachannel" — raw ids in
         // advice about a picker that spells all four out.
-        .speedDatachannelHint:       "Tip: the video transports (VP8, SEI, Video) trade bandwidth for looking like a call. For more speed, switch the server's transport to DataChannel with «Change room / transport» on the Servers tab, where your network allows it.",
+        .speedDatachannelHint:       "The video transports (VP8, SEI, Video) carry data as a video stream, which limits speed. DataChannel is the fastest — switch it in «Change room / transport» on the Servers tab.",
         .settingsPortLabel:          "Port",
         .checkPortAction:            "Check port",
         .randomPortAction:           "Random",
@@ -401,7 +392,7 @@ enum L10nTable {
         // displays those two as "VP8" and "WB Stream" in every picker, so
         // the note now uses the words the user was shown when they chose.
         // #461: "Telemost" -> "Yandex Telemost", to match the carrier label.
-        .vp8Note:                    "These two matter only when the server sends its traffic as video — the VP8 transport, which is what WB Stream uses by default. More frames and bigger batches move more data, but look less like an ordinary video call. The defaults, 60 and 64, are tuned for Yandex Telemost.",
+        .vp8Note:                    "Apply only to the VP8 transport — the main video path for WB Stream and Telemost. More frames and bigger batches move more data per second. The defaults (60 and 64) are tested on both services.",
         .startTimeoutLabel:          "Ready timeout",
         .startTimeoutNote:           "How long to wait for a connection to come up before giving up and reporting a failure.",
         .autoConnectOnLaunchLabel:   "Auto-connect on launch",
@@ -451,11 +442,11 @@ enum L10nTable {
         // #470 was: "…restarted with the new -carrier/-id/-transport flags…" — reconfigureScript seds server.yaml; the command line never changes.
         // #471 was: "Rewrites the protocol's server config (carrier, room, transport) and restarts its container." — that is what runs, not what happens.
         .reconfigureInfoFooter:      "Restarts this protocol with the new settings. No reinstall.",
-        .reconfigureTransportTuningFooter: "Changing the transport resets vp8/sei tuning on the server to its defaults. Reinstall to set custom tuning.",
+        .reconfigureTransportTuningFooter: "Changing the transport resets the server's VP8 and SEI tuning to defaults. Reinstall to set custom values.",
         .parametersHeader:           "Parameters",
         .roomIDAutoGenHint:          "Room ID will be generated by the server.",
-        .roomIDTelemostHint:         "Create a meeting on telemost.yandex.ru and paste its ID (the part after /j/ in the link).",
-        .roomIDWbstreamHint:         "Create a room on stream.wb.ru under your account and paste its ID.",
+        .roomIDTelemostHint:         "Create a meeting in Telemost (Yandex account required) and paste its ID — the part of the link after /j/. A regular link lives 24 hours.",
+        .roomIDWbstreamHint:         "Create a room on stream.wb.ru and paste its ID. VP8, SEI and Video work as a guest; DataChannel needs an account token.",
         .matrixRecommended_fmt:      "★ Recommended for %@.",
         .matrixWorks_fmt:            "Works with %@.",
         .matrixQuestion_fmt:         "⚠ Working with %@ is uncertain.",
@@ -465,9 +456,9 @@ enum L10nTable {
         // #471 was: "key=hex64 (auto-generated) · …" — a field name and a type, to a reader who types neither.
         .carrierFooter:          "A new encryption key is generated for this server · DNS and VP8 come from Settings",
         .transportSectionHeader:     "Transport",
-        .roomIDSectionHeader:        "Room ID",
+        .roomIDSectionHeader:        "Room",
         .jitsiServerHeader:          "Jitsi server",
-        .jitsiServerFooter:          "Shared public instance — point at your own Jitsi for reliability and to avoid overloading it.",
+        .jitsiServerFooter:          "Jitsi Meet instance address. The default is a shared public server; your own instance is more reliable.",
         .seiSettingsHeader:          "SEI Settings",
         // #461 was: "SEI params sent to srv.sh for seichannel." — a script
         // filename and a raw transport id in a footer the user reads.
@@ -577,7 +568,6 @@ enum L10nTable {
         // ServersView alerts
         .alertPasswordMissingShort:  "Password not found",
         .alertKeyMissingShort:       "SSH key not found",
-        .shareFullAccessKeyHostUnavailable: "Full access can't be shared for this server: it authenticates with an SSH key, and the link would embed your private key. Share the connection URI instead, or switch the server to password auth.",
 
         // AddServerHostView
         .nameSettingLabel:           "Name",
@@ -679,7 +669,7 @@ enum L10nTable {
         // The toggle above it is called "Hide IP addresses"; a footer that
         // renames the control it explains reads as being about something else.
         // #471 was: "…and VPS cards" — the tab, the screen title and this footer say server.
-        .maskIPsFooter:              "Hides IP addresses on the Connections diagnostics and server cards for safe screenshots. Display-only — copy actions and stored values stay real. Logs still contain the real addresses.",
+        .maskIPsFooter:              "Hides IP addresses on screen — for screenshots. Copying and logs stay real.",
 
         // #328: active-carrier endpoints with one-tap copy
         // #460 (finding 23) was: `.carrierEndpointsTitle` ("Carrier endpoints")
@@ -718,8 +708,8 @@ enum L10nTable {
         .a11yStateDisconnected:      "Disconnected",
 
         // #360: in-app update checker (GitHub Releases)
-        .updateCheckLabel:           "Check for updates",
-        .updateCheckFooter:          "Once a day, checks GitHub Releases for a newer build and tells you how to sideload it. Anonymous — no account, no install id, no download is sent. Turn off to never contact GitHub.",
+        .updateCheckLabel:           "Check for app updates",
+        .updateCheckFooter:          "Once a day, anonymously asks GitHub Releases for a newer olcOS build and tells you how to install it. The server-side core update lives on the server screen.",
         .updateAvailableTitle_fmt:   "Update available — %@",
         .updateAvailableBody:        "A newer build is on GitHub. Open the release page or, if you sideload, tap your installer below to fetch the unsigned build.",
         .updateOpenReleasePage:      "Open release page",
@@ -766,7 +756,7 @@ enum L10nTable {
         .botRemoveConfirmTitle:      "Remove bot from this server?",
         .botRemoveConfirmBody:       "The bot service is stopped and removed from the server. Its token stays saved in Settings.",
         .sectionBots:                "Bots",
-        .botsFooter:                 "These names are used to find your bots on servers. Deleting a bot here stops detecting it (a bot already running on a server keeps working) and erases its saved token.",
+        .botsFooter:                 "Names are used to find bots on servers. Deleting a bot here erases its token; a bot already on a server keeps running.",
         .botsEmptyHint:              "No bots configured.",
         .botAddTitle:                "Add bot",
         .botEditTitle:               "Edit bot",
@@ -794,7 +784,6 @@ enum L10nTable {
         .removeProtocolAction:        "Remove from server",
         .removeProtocolConfirmTitle_fmt: "Remove %@ from this server?",
         .removeProtocolConfirmBody:   "Stops and deletes this protocol and its config on the server. The matching connection is removed from your list too. The other protocols keep running.",
-        .protocolConnectAction:       "Connect via this protocol",
         // #460 (findings 7 / 16) was: `.protocolConnectedBadge` ("Connected") —
         // the longest word on a title line too narrow for it, which SwiftUI
         // hyphenated into "Connec-ted". Keep any translation short.
@@ -951,7 +940,7 @@ enum L10nTable {
         .heroEvidenceNoNetwork:      "holding the session until the network returns",
         // #461 was: "Proxy · only apps you point at 127.0.0.1:%@" — a sentence
         // where a caption was wanted. Same %@ (the bound port).
-        .heroScopeProxy_fmt:         "Proxy · port %@",   // #471: a loopback address is not a headline
+        .heroScopeProxy_fmt:         "SOCKS5 · port %@",   // #471: a loopback address is not a headline
         .heroScopeVPN:               "VPN · whole device",   // #471
 
         // #457/#459: connection rows. The live connection is the hero's subject
@@ -985,7 +974,7 @@ enum L10nTable {
         // the server card's thirteen-item menu is five safe items plus a pushed
         // "Manage server" screen.
         // #461 was: "Switch to" — complaint 3: the header ran into the server
-        // label under it and read "Switch to — zaza". The protocol is the
+        // label under it and read "Switch to — ams-1". The protocol is the
         // subject on this screen, so the header says so and the row supplies it.
         .connectListOtherHeader:     "Switch protocol",
         .diagSessionHeader:          "This session",
@@ -1014,19 +1003,19 @@ enum L10nTable {
         .vpsAdvancedTitle_fmt:       "Manage %@",
         .vpsAdvancedConnectionHeader:  "Connection",
         .vpsAdvancedMaintenanceHeader: "Maintenance",
-        .vpsAdvancedRemoveHeader:      "Remove",
+        .vpsAdvancedRemoveHeader:      "Danger zone",
         // Every destructive row says what it destroys — the sentence a menu row
         // could not carry, and the reason this screen exists.
         // #471: the two remove rows used to read as the same row twice. They now
         // differ by one clause — the build cache — and by what survives.
-        .vpsAdvancedRebootFooter:      "Restarts the whole server. Everything running on it stops until it comes back.",
-        .vpsAdvancedUninstallFooter:   "Removes every protocol from this server, with its key. The tools stay, so a reinstall takes about a minute. Every connection saved for this server stops working.",
+        .vpsAdvancedRebootFooter:      "Restarts the whole server; everything on it stops until it is back.",
+        .vpsAdvancedUninstallFooter:   "Removes every protocol and its key; the tools stay for a quick reinstall.",
         // #471 was: "Removes the olcrtc containers, the deploy directory, the
         // encryption key and the Go build cache (~300 MB). Podman and the golang
         // image stay." The image is never removed (ServersView passes
         // removeImage: false), and naming Podman told the reader nothing.
-        .vpsAdvancedDeepUninstallFooter: "Removes every protocol, the key and the build cache (~300 MB). The next install starts from scratch.",
-        .vpsAdvancedRemoveHostFooter:  "Forgets this server in the app. Nothing on the machine itself changes.",
+        .vpsAdvancedDeepUninstallFooter: "Removes protocols, key and build cache (~300 MB); the next install starts from scratch.",
+        .vpsAdvancedRemoveHostFooter:  "Forgets this server in the app; nothing changes on the machine.",
 
         // #460: screenshot rounds 2–4.
         // #461 was: `.heroExitSourceNote` — a full sentence of provenance under
@@ -1035,7 +1024,6 @@ enum L10nTable {
         // Instruction 26: auto-switch moved off Settings and onto the screen
         // holding the protocols it switches between, so its explainer had to
         // shrink from a settings paragraph to one line on a card.
-        .connectAutoSwitchHint:      "If the protocol in use stops answering, switch to another one on the same server.",
 
         // #461: with one installed protocol the switcher had a header and no
         // rows. The hint names the screen that fixes it — this screen never
@@ -1107,7 +1095,7 @@ enum L10nTable {
         .settingsSectionConnection:  "Connection",
         .settingsSectionProxy:       "Proxy",
         .settingsProxyAddressLabel:  "Address for other apps (SOCKS5)",
-        .updateCheckNowAction:       "Check for updates now",
+        .updateCheckNowAction:       "Check now",
         .updateUpToDate_fmt:         "%@ is the latest build.",
         .updateCheckFailed:          "Couldn't reach GitHub. Try again in a moment.",
         .protocolRecreateAction:     "Re-create this protocol",
@@ -1126,8 +1114,8 @@ enum L10nTable {
         .telemostExpiryRenewAction:  "Renew now",
         // boc #480
         .telemostRenewalAttentionTitle: "Telemost renewal needs attention",
-        .telemostAgeUnknown_fmt:     "The room age for “%@” is unknown, so automatic renewal cannot predict its expiry. Renew once through the app to start tracking it. Renewing restarts the server protocol and may drop your connection.",
-        .telemostSetupRequired_fmt:  "Automatic renewal is not ready for “%@”. In Servers, check the linked server, verified SSH host identity, saved SSH credentials, installed container and Yandex sign-in, then renew the room. Its expiry may be unknown.",
+        .telemostAgeUnknown_fmt:     "The room for “%@” was added by hand, so the app does not know when it was created. A temporary Telemost link lives 24 hours. Renew once through the app; from then on olcOS renews it ahead of time. Renewing restarts the server protocol and may drop the connection.",
+        .telemostSetupRequired_fmt:  "A temporary Telemost link lives 24 hours, so the room for “%@” has to be renewed daily. To let olcOS do it, open the linked server on the Servers tab and sign in to Yandex.",
         .telemostCreationFailed_fmt: "Could not create a new room for “%@”. The saved room and its age have not changed. Open its room sheet in Servers to check your Yandex sign-in and retry.",
         .telemostApplyUnconfirmed_fmt: "The server did not confirm renewal for “%@”. It may or may not have changed rooms. The saved room and its age have not changed. Automatic retries are paused until you explicitly renew or change the saved room. Check or recover the server configuration in Servers before retrying.",
         .telemostApplyCandidate_fmt: "The attempted new room ID is %@. Use it only after confirming the server configuration.",
@@ -1152,6 +1140,127 @@ enum L10nTable {
         .sshHostKeyResetDone: "The saved server key was forgotten. You can now retry the server action. The next SSH connection will automatically remember the key it receives.",
         // eoc #481
         .later:                      "Later",
+        .addFlowStepAccess: "Access",
+        .addFlowStepCheck: "Check",
+        .addFlowStepProtocols: "Protocols",
+        .addFlowStepRoom: "Room",
+        .addFlowStepInstall: "Install",
+        .addFlowStepCounter_fmt: "Step %d of %d",
+        .addFlowNext: "Next",
+        .addFlowBack: "Back",
+        .addFlowAccessLead: "Where does olcOS go? The credentials stay in this device's Keychain.",
+        .addFlowKeyPasted_fmt: "Key pasted · %@",
+        .addFlowKeyReplace: "Replace key",
+        .addFlowKeyNotShownNote: "The key is not shown again after pasting.",
+        .addFlowClipboardEmpty: "Clipboard is empty",
+        .addFlowLabelMissing: "Enter a name",
+        .addFlowHostInvalid: "Enter the server address",
+        .addFlowPortInvalid: "Port must be 1–65535",
+        .addFlowUserMissing: "Enter the login",
+        .addFlowPasswordMissing: "Enter the password",
+        .addFlowKeyMissing: "Paste a private key",
+        .addFlowPassphraseMissing: "This key needs a passphrase",
+        .addFlowCheckLead: "We connect over SSH and look at what is already on the server.",
+        .addFlowCheckRunning: "Connecting over SSH…",
+        .addFlowCheckOK: "Server responds",
+        .addFlowCheckFailed: "Could not connect",
+        .addFlowTofuFirstTitle: "First connection",
+        .addFlowTofuFirstBody: "The server's SSH key will be remembered now. If it ever changes, the app blocks the connection and warns you.",
+        .addFlowTofuKnownTitle: "Known server key",
+        .addFlowTofuKnownBody: "Matches the key saved earlier for this address.",
+        .addFlowTofuMismatchTitle: "Server key changed",
+        .addFlowFactOS: "System",
+        .addFlowFactArch: "Architecture",
+        .addFlowFactRuntime: "Containers",
+        .addFlowFactRuntimeNone: "Not found — the installer sets up podman",
+        .addFlowFactExisting_fmt: "olcOS already here: %@",
+        .addFlowFactExistingNone: "olcOS is not installed yet",
+        .addFlowFactUnknown: "Unknown",
+        .addFlowProtocolsLead: "Pick the services the tunnel will run through. Each one gets its own connection.",
+        .addFlowBadgeRecommended: "Recommended start",
+        .addFlowBadgeAlternative: "Alternative",
+        .addFlowBadgePrimary: "Primary",
+        .addFlowNeedsYandex: "Needs a Yandex account",
+        .addFlowTransportFor_fmt: "Transport for %@",
+        .addFlowPickAtLeastOne: "Choose at least one service",
+        .addFlowRoomLead: "Each service needs a room the server will join.",
+        .addFlowYandexSignInBody: "The Telemost room is created from your Yandex account and handed to the server. Use a throwaway account — the sign-in token is kept only in Keychain.",
+        .addFlowTelemostCreating: "Creating a Telemost room…",
+        .addFlowTelemostCreated: "Room created",
+        .addFlowTelemostCreatedBody: "The server will be installed with this room. The link is valid for 24 hours.",
+        .addFlowTelemostFailed: "Could not create a room",
+        .addFlowJitsiInstance: "Jitsi instance",
+        .addFlowJitsiInstanceNote: "Public instances come and go — check the address in a browser first.",
+        .addFlowJitsiCustom: "Own address",
+        .addFlowJitsiRoomName: "Room name",
+        .addFlowJitsiRoomHint: "Letters and digits. Empty — the server picks a name.",
+        .addFlowRoomMissing_fmt: "Set a room for %@",
+        .addFlowInstallLead: "Check the summary and start. The server builds olcOS on its own; this takes a few minutes.",
+        .addFlowSummaryServer: "Server",
+        .addFlowSummaryProtocols: "Protocols",
+        .addFlowInstallRunning: "Installing…",
+        .addFlowInstallDone: "Server is ready",
+        .addFlowInstallFailed: "Installation failed",
+        .addFlowInstallFailedHint: "Details are in Logs → VPS. The server stays in the list — you can retry from there.",
+        .addFlowResultConnections: "Connections",
+        .addFlowResultPending: "Connections will appear in the Connections tab.",
+        .installOptionsLead: "Add a protocol to this server. It shares the encryption key with the installed ones.",
+        .throughputKBps_fmt: "%@ KB/s",
+        .throughputMBps_fmt: "%@ MB/s",
+        .throughputA11y_fmt: "Download %@, upload %@",
+        .throughputEstimateA11y_fmt: "About %@ through the local SOCKS5 listener — an estimate from loopback traffic, not split by direction",
+        .carrierJitsiDesc: "Open-source video-conferencing platform (Jitsi Meet). A room is an instance address plus a name; no sign-up. The recommended start, together with DataChannel.",
+        .carrierTelemostDesc: "Yandex's video-meeting service. Needs a Yandex account: the room is created in Telemost and a regular link lives 24 hours, so the app can renew the room. Traffic goes as a video stream (VP8).",
+        .carrierWbstreamDesc: "Online meetings and streaming service by Wildberries. Works without an account as a guest over the video transports (VP8, SEI, Video); DataChannel needs an account token.",
+        .transportDatachannelDesc: "Bytes travel over the service's native data channel. The simplest and fastest path; stable with Jitsi. With WB Stream it needs an account token.",
+        .transportVp8channelDesc: "Data is packed into VP8 video frames (KCP over video). The main video path for WB Stream and Telemost.",
+        .transportSeichannelDesc: "Data is hidden in H.264 metadata blocks (SEI NAL), with acknowledgements and retries. The fallback for WB Stream and Jitsi.",
+        .transportVideochannelDesc: "Data is encoded as visual frames (QR/tiles) in VP8 in pure Go, with acknowledgements. Experimental; not supported in VPN mode.",
+        .vpsSnapshotRefreshing: "Updating…",
+        .settingsCarrierEndpointsRow: "Bypass list for another proxy app",
+        .settingsCarrierEndpointsEmpty: "Add a connection first — the addresses come from its room.",
+        .settingsBotsServersHeader: "On servers",
+        .settingsBotsServersFooter: "Tap a server to check, deploy or remove its bot.",
+        .settingsConnectionSummary_fmt: "Start %d s · check every %d s",
+        .settingsTransportSummary_fmt: "%d fps · batch %d",
+        .settingsDiagnosticsSummary_fmt: "%@ · %d IP sources",
+        .settingsConnectionsCount_fmt: "%d connections",
+        .settingsBotsCount_fmt: "%d bots",
+        .protocolAboutAction: "About this protocol",
+        .protocolAboutHide: "Hide description",
+        .shareServerTitle_fmt: "Share: %@",
+        .shareServerProtocolsHeader: "Protocol connection",
+        .shareServerNoProtocols: "No protocol connections on this server yet.",
+        .shareFullAccessPasswordSub: "The link contains the SSH login and password.",
+        .shareFullAccessKeySub: "The link contains the SSH login and the full private key.",
+        .shareFullAccessConfirmTitle: "Share full access?",
+        .shareFullAccessConfirmAction: "Continue",
+        .shareFullAccessConfirmPassword: "The link will contain the SSH login and password. Anyone with it can fully control this server.",
+        .shareFullAccessConfirmKey: "The link will contain the full SSH private key (and its passphrase, if any). Anyone with it can fully control this server — and every other server that accepts this key.",
+        .shareFullAccessWarningKey: "This link contains your SSH login and the full private key. Anyone with it can fully control this server — and any other server that accepts this key. Share only with someone you trust to co-administer it.",
+        .settingsUpdateCheckOn: "Checked once a day",
+        .settingsUpdateCheckOff: "Automatic check off",
+        .sshKeyStored_fmt: "%@ key stored in Keychain",
+        .sshKeyReplaceAction: "Replace key",
+        .actionUpdateSub: "Updates the olcOS core on the VPS. The app itself updates in Settings.",
+        .vpsAdvancedOverviewHeader: "Overview",
+        .vpsAdvancedActionsHeader: "Actions",
+        .vpsAdvancedRecoverSub: "Recreate the connection record for the installed container.",
+        .healthActionSharedRecordNote: "This connection came from another device: its key and room are managed by the server owner. Ask them for a fresh link or QR code.",
+        .deviceNameSectionHeader: "This device",
+        .deviceNameLabel: "Name in the room",
+        .deviceNameRegenerate: "New name",
+        .deviceNameFooter: "Two random words and a number, generated on this device. It replaces 'default' when connecting, so the same shared link works on several devices at once. Contains nothing about the phone or you. A new name applies from the next connection.",
+        .fieldRevealSecret: "Show",
+        .fieldHideSecret: "Hide",
+        .roomIDPlaceholder: "Paste the room id",
+        .roomIDLinkHint: "A Telemost meeting link works too — it is shortened to the id.",
+        .wbTokenPlaceholder: "Paste the token",
+        .formAccessSectionHeader: "Access",
+        .healthChipNotChecked: "Not checked",
+        .healthChipWas_fmt: "was %@",
+        .healthChipNoData: "No data",
+        .shareRecipientHint: "Only olcOS understands this link. The recipient installs olcOS, opens Connections → + → Paste URI, or scans your QR code.",
     ]
 
     // MARK: Russian
@@ -1197,13 +1306,6 @@ enum L10nTable {
         .vpnSettingsEntryName:      "olcOS",
         .vpnCapabilityUnavailable_fmt: "Система отклонила конфигурацию VPN (%@). Так бывает, если доступ к VPN был отклонён или приложение подписано бесплатным Apple ID — для Network Extension нужна платная команда Apple Developer. Режим прокси продолжает работать.",
 
-        // #453: auto-failover. #460: элемент управления переехал на экран
-        // «Подключения», к тем самым протоколам, между которыми он переключает,
-        // поэтому это теперь заголовок карточки и строка условия под ней.
-        // #460 было: `.configFailoverExplainer` — длинная фраза для страницы
-        // настроек; на карточке её заменил однострочный `connectAutoSwitchHint`.
-        .configFailoverToggle:       "Авто-переключение протоколов",
-        .configFailoverProxyOnlyFooter: "Работает в режиме прокси.",
         .settingsRefreshOnEntryToggle:  "Проверять при открытии",
         // #460: «чтобы вы видели» → безличная форма; остальная таблица на «ты».
         .settingsRefreshOnEntryExplainer: "При открытии приложения заново проверять серверы и все протоколы на них, чтобы на экране было актуальное состояние. То, что проверялось пару минут назад, не трогается.",
@@ -1219,7 +1321,6 @@ enum L10nTable {
         // #461 было: «Telemost … (только vp8channel) … datachannel … WBStream» —
         // три сырых id и имя оператора, написанное не так, как в самом списке.
         // #470 было: «(только VP8)» — см. английскую запись.
-        .carrierChoiceFooter:        "«Яндекс Телемост» сложнее всего заблокировать (рекомендуется VP8, работает и Видео). Jitsi с DataChannel — самый быстрый и стабильный. WB Stream требует токен аккаунта.",
         // #460 было: `.configReliabilityHeader` («Надёжность») — в этом разделе
         // настроек остался только переключатель авто-переключения, а он переехал.
         .unitSeconds:                "с",
@@ -1282,15 +1383,14 @@ enum L10nTable {
         .editConnectionTitle:        "Редактирование",
         .nameField:                  "Метка",
         .namePlaceholder:            "Мой сервер",
-        .groupField:                 "Группа",
         .groupDefault:               "Подключения",   // #344 was: "Основная"
         .importByURI:                "Импорт по ссылке",
         .scanQRAction:               "Сканировать QR",
         .pasteURIAction:             "Вставить URI",
         // #458 was: «Нажми «Вставить»…» — the button reads «Вставить URI».
-        .importHint:                 "Нажми «Вставить URI», чтобы импортировать URI или подписку из буфера обмена, либо «Сканировать QR». Поля ниже заполнятся автоматически.", // #381 was: "Если у тебя есть URI с сервера — вставь сюда и нажми «Распознать». Поля ниже заполнятся автоматически." — кнопки «Сканировать QR» / «Вставить» (с #361 «Вставить» импортирует и подписки), кнопки «Распознать» нет.
-        .clientIDFooter:             "Идентификатор устройства в комнате. «default» подходит для одного устройства. Используй уникальное значение если несколько устройств подключаются к одной комнате.",
-        .keyPlaceholder:             "64-символьный hex-ключ",
+        .importHint:                 "Ссылка olcrtc:// заполнит поля ниже. Ссылка на подписку или её текст откроет импорт.", // #381 was: "Если у тебя есть URI с сервера — вставь сюда и нажми «Распознать». Поля ниже заполнятся автоматически." — кнопки «Сканировать QR» / «Вставить» (с #361 «Вставить» импортирует и подписки), кнопки «Распознать» нет.
+        .clientIDFooter:             "Оставь «default» — тогда каждое устройство представляется своим ID, и одна ссылка работает на нескольких устройствах сразу. Меняй, только если владелец сервера просил конкретное значение.",
+        .keyPlaceholder:             "64 hex-символа",
         .roomIDLabel:                "Идентификатор комнаты",
         .clientIDLabel:              "ID клиента",
         .keyHexLabel:                "Ключ (hex)",
@@ -1330,7 +1430,7 @@ enum L10nTable {
         .actionInstall:              "Установить",
         .actionUninstall:            "Удалить все протоколы с сервера",
         // #471 было: «Обновить бинарник (закреплённая сборка + пересборка)» — см. английскую запись.
-        .actionUpdate:               "Обновить olcOS на сервере",
+        .actionUpdate:               "Обновить серверную часть olcOS",
         .actionReboot:               "Перезагрузить",
         .actionChangeRoomTransport:  "Сменить комнату / транспорт",
         .actionDone:                 "Готово",
@@ -1476,7 +1576,7 @@ enum L10nTable {
         .wbTokenFieldLabel:          "Токен аккаунта (необязательно)",
         // #461 было: «wbstream» / «datachannel» — сырые id.
         // #470: «Вставьте» → «Вставь» — таблица на «ты».
-        .wbTokenFooter:              "Вставь токен аккаунта WB Stream. Пусто — анонимный гость; для DataChannel токен обязателен.",
+        .wbTokenFooter:              "Токен аккаунта WB Stream. Пусто — гость (VP8, SEI, Video); для DataChannel токен обязателен.",
 
         // SettingsView
         .settingsTitle:              "Настройки",
@@ -1492,7 +1592,7 @@ enum L10nTable {
         .settingsSectionStart:       "Запуск подключения",
         .settingsSectionStayConnected: "Удержание подключения",
         .settingsSectionSpeedTest:   "Тест скорости",
-        .settingsSectionUpdates:     "Обновления",
+        .settingsSectionUpdates:     "Обновление приложения",
         .sectionLogs:                "Логи",
         .sectionIPSources:           "Источники проверки IP",
         .ipSourcesFooter:            "Сервисы, опрашиваемые при проверке IP. Варианты из ru-зоны остаются доступны, когда публичные резолверы заблокированы. Если ничего не выбрано, используются значения по умолчанию.",
@@ -1506,7 +1606,7 @@ enum L10nTable {
         // #461 было: «(vp8channel/sei/video)» и «на datachannel» — сырые id в
         // совете про список, который пишет все четыре словами.
         // #470: «смените» → «смени» — сосед speedProviderFooter уже на «ты».
-        .speedDatachannelHint:       "Подсказка: видео-транспорты (VP8, SEI, Видео) жертвуют скоростью ради вида видеозвонка. Для большей скорости смени транспорт сервера на DataChannel через «Сменить комнату / транспорт» на вкладке «Серверы» там, где это позволяет сеть.",
+        .speedDatachannelHint:       "Видеотранспорты (VP8, SEI, Video) передают данные видеопотоком, что ограничивает скорость. Быстрее всего DataChannel — сменить его можно через «Сменить комнату / транспорт» на вкладке «Серверы».",
         .settingsPortLabel:          "Порт",
         .checkPortAction:            "Проверить порт",
         .randomPortAction:           "Случайный",
@@ -1524,7 +1624,7 @@ enum L10nTable {
         // остаётся — это транспорт, который пользователь выбирает на вкладке
         // «Серверы», а не внутреннее имя.
         // #461: «для Telemost» -> «под «Яндекс Телемост»» — как в списке.
-        .vp8Note:                    "Эти два параметра важны, только когда сервер передаёт трафик видео — транспорт VP8, который WB Stream использует по умолчанию. Больше кадров и крупнее пачки — больше данных, но меньше похоже на обычный видеозвонок. Значения по умолчанию, 60 и 64, подобраны под «Яндекс Телемост».",
+        .vp8Note:                    "Действуют только для транспорта VP8 — основного видеопути WB Stream и Телемоста. Больше кадров и крупнее пачки — больше данных за секунду. Значения по умолчанию (60 и 64) проверены на обоих сервисах.",
         .startTimeoutLabel:          "Таймаут готовности",
         .startTimeoutNote:           "Сколько ждать, пока подключение поднимется, прежде чем прекратить попытку и сообщить об ошибке.",
         .autoConnectOnLaunchLabel:   "Авто-подключение при запуске",
@@ -1568,11 +1668,11 @@ enum L10nTable {
         // #471 было: «Перезаписывает конфиг протокола на сервере (оператор, комната, транспорт) и перезапускает его контейнер».
         .reconfigureInfoFooter:      "Перезапустит этот протокол с новыми настройками. Переустановка не нужна.",
         // #470: «переустановите» → «переустанови» — таблица на «ты».
-        .reconfigureTransportTuningFooter: "При смене транспорта настройки vp8/sei на сервере сбрасываются на значения по умолчанию. Для тонкой настройки переустанови.",
+        .reconfigureTransportTuningFooter: "Смена транспорта сбрасывает настройки VP8 и SEI на сервере к значениям по умолчанию. Для своих значений переустанови.",
         .parametersHeader:           "Параметры",
         .roomIDAutoGenHint:          "Room ID будет сгенерирован сервером.",
-        .roomIDTelemostHint:         "Создай встречу на telemost.yandex.ru и вставь ID (часть после /j/ в ссылке).",
-        .roomIDWbstreamHint:         "Создай комнату на stream.wb.ru под своей учёткой и вставь её ID.",
+        .roomIDTelemostHint:         "Создай встречу в Телемосте (нужен аккаунт Яндекса) и вставь её ID — часть ссылки после /j/. Обычная ссылка живёт 24 часа.",
+        .roomIDWbstreamHint:         "Создай комнату на stream.wb.ru и вставь её ID. Как гость работают VP8, SEI и Video; для DataChannel нужен токен аккаунта.",
         .matrixRecommended_fmt:      "★ Рекомендуется для %@.",
         .matrixWorks_fmt:            "Работает с %@.",
         .matrixQuestion_fmt:         "⚠ Работа с %@ под вопросом.",
@@ -1582,9 +1682,9 @@ enum L10nTable {
         // #471 было: «key=hex64 (генерируется)» — имя поля и тип, которых пользователь не вводит.
         .carrierFooter:          "Для этого сервера создаётся новый ключ шифрования · DNS и VP8 берутся из настроек",
         .transportSectionHeader:     "Транспорт",
-        .roomIDSectionHeader:        "Room ID",
+        .roomIDSectionHeader:        "Комната",
         .jitsiServerHeader:          "Сервер Jitsi",
-        .jitsiServerFooter:          "Общий публичный сервер — укажи свой Jitsi для надёжности, чтобы не перегружать чужой.",
+        .jitsiServerFooter:          "Адрес инстанса Jitsi Meet. По умолчанию — общий публичный сервер; свой инстанс надёжнее.",
         .seiSettingsHeader:          "SEI-настройки",
         // #461 было: «передаются в srv.sh для seichannel» — имя скрипта и
         // сырой id транспорта в подписи, которую читает пользователь.
@@ -1701,7 +1801,6 @@ enum L10nTable {
         // ServersView alerts
         .alertPasswordMissingShort:  "Пароль не найден",
         .alertKeyMissingShort:       "SSH-ключ не найден",
-        .shareFullAccessKeyHostUnavailable: "Полный доступ для этого сервера не передаётся: он использует SSH-ключ, и ссылка содержала бы твой приватный ключ. Поделись URI подключения или переведи сервер на пароль.",
 
         // AddServerHostView
         .nameSettingLabel:           "Название",
@@ -1807,7 +1906,7 @@ enum L10nTable {
         // #460 было: «на вкладке «Соединения»» — вкладка называется
         // «Подключения» (`.tabConnections`); одно место — одно имя.
         // #471 было: «на карточках VPS» — везде «сервер».
-        .maskIPsFooter:              "Скрывает IP-адреса в диагностике на вкладке «Подключения» и на карточках серверов для безопасных скриншотов. Только отображение — копирование и сохранённые значения остаются настоящими. В логах адреса остаются настоящими.",
+        .maskIPsFooter:              "Скрывает IP-адреса на экране — для скриншотов. Копирование и логи остаются настоящими.",
 
         // #328: конечные точки активного оператора с копированием в один тап
         // #460 (finding 23) было: `.carrierEndpointsTitle` («Точки оператора»)
@@ -1848,8 +1947,8 @@ enum L10nTable {
         .a11yStateDisconnected:      "Отключено",
 
         // #360: проверка обновлений (GitHub Releases)
-        .updateCheckLabel:           "Проверять обновления",
-        .updateCheckFooter:          "Раз в сутки проверяет в GitHub Releases новую сборку и подсказывает, как её установить через сайдлоад. Анонимно — без аккаунта, без идентификатора установки, ничего не отправляется. Отключи, чтобы вообще не обращаться к GitHub.",
+        .updateCheckLabel:           "Проверять обновления приложения",
+        .updateCheckFooter:          "Раз в сутки анонимно спрашивает GitHub Releases о новой сборке olcOS и подсказывает, как её установить. Обновление ядра на сервере — на экране сервера.",
         .updateAvailableTitle_fmt:   "Доступно обновление — %@",
         .updateAvailableBody:        "В GitHub есть более новая сборка. Открой страницу релиза или, если ставишь через сайдлоад, нажми кнопку своего установщика ниже, чтобы скачать неподписанную сборку.",
         .updateOpenReleasePage:      "Открыть страницу релиза",
@@ -1897,7 +1996,7 @@ enum L10nTable {
         .botRemoveConfirmTitle:      "Удалить бота с этого сервера?",
         .botRemoveConfirmBody:       "Служба бота будет остановлена и удалена с сервера. Токен останется сохранён в настройках.",
         .sectionBots:                "Боты",
-        .botsFooter:                 "Эти имена используются для поиска ботов на серверах. Удаление бота здесь прекращает его обнаружение (уже запущенный на сервере бот продолжит работать) и стирает сохранённый токен.",
+        .botsFooter:                 "Имена нужны для поиска ботов на серверах. Удаление бота здесь стирает его токен; бот на сервере продолжит работать.",
         .botsEmptyHint:              "Боты не настроены.",
         .botAddTitle:                "Добавить бота",
         .botEditTitle:               "Изменить бота",
@@ -1928,7 +2027,6 @@ enum L10nTable {
         .removeProtocolAction:        "Удалить с сервера",
         .removeProtocolConfirmTitle_fmt: "Удалить %@ с этого сервера?",
         .removeProtocolConfirmBody:   "Останавливает и удаляет этот протокол и его конфиг на сервере. Соответствующее подключение тоже удаляется из списка. Остальные протоколы продолжают работать.",
-        .protocolConnectAction:       "Подключиться через этот протокол",
         // #460 (findings 7 / 16) было: `.protocolConnectedBadge` («Подключено»)
         // — самое длинное слово в строке заголовка, которой не хватало ширины,
         // и SwiftUI переносил его посреди слова. Держать перевод коротким.
@@ -2082,7 +2180,7 @@ enum L10nTable {
         .heroEvidenceNoNetwork:      "держим сессию, пока не вернётся сеть",
         // #461 было: «Прокси · только приложения, которые смотрят на …» —
         // предложение там, где нужна подпись. Тот же один %@ (порт).
-        .heroScopeProxy_fmt:         "Прокси · порт %@",   // #471
+        .heroScopeProxy_fmt:         "SOCKS5 · порт %@",   // #471
         .heroScopeVPN:               "VPN · всё устройство",   // #471
 
         // #457/#459: строки подключений. Активное подключение — это герой
@@ -2115,7 +2213,7 @@ enum L10nTable {
         // одну карточку, а меню из тринадцати пунктов на карточке сервера стало
         // пятью безопасными пунктами плюс экран «Управление сервером».
         // #461 было: «Переключиться» — жалоба 3: заголовок сливался с меткой
-        // сервера под ним и читался как «Переключиться — zaza». Предмет этого
+        // сервера под ним и читался как «Переключиться — ams-1». Предмет этого
         // экрана — протокол, о нём заголовок и говорит.
         .connectListOtherHeader:     "Сменить протокол",
         .diagSessionHeader:          "Текущая сессия",
@@ -2144,19 +2242,19 @@ enum L10nTable {
         .vpsAdvancedTitle_fmt:       "Управление: %@",
         .vpsAdvancedConnectionHeader:  "Подключение",
         .vpsAdvancedMaintenanceHeader: "Обслуживание",
-        .vpsAdvancedRemoveHeader:      "Удаление",
+        .vpsAdvancedRemoveHeader:      "Опасная зона",
         // Каждая опасная строка говорит, что именно она уничтожит, — этого не
         // умеет пункт меню, и ради этого экран и появился.
         // #471: две строки удаления читались как одна и та же дважды. Теперь они
         // различаются одной оговоркой — кеш сборки — и тем, что остаётся.
-        .vpsAdvancedRebootFooter:      "Перезагружает сервер целиком. Всё, что на нём работает, остановится, пока он не поднимется.",
-        .vpsAdvancedUninstallFooter:   "Удаляет с сервера все протоколы и ключ. Инструменты остаются, так что переустановка займёт около минуты. Все подключения к этому серверу перестанут работать.",
+        .vpsAdvancedRebootFooter:      "Перезагружает весь сервер; всё на нём остановится, пока он не поднимется.",
+        .vpsAdvancedUninstallFooter:   "Удаляет все протоколы и ключ; инструменты остаются для быстрой переустановки.",
         // #471 было: «Удаляет контейнеры olcrtc, папку развёртывания, ключ
         // шифрования и кеш сборки Go (~300 МБ). Podman и образ golang остаются.»
         // Образ не удаляется никогда (removeImage: false), а имя «Podman»
         // читателю ничего не говорит. См. английскую запись.
-        .vpsAdvancedDeepUninstallFooter: "Удаляет все протоколы, ключ и кеш сборки (~300 МБ). Следующая установка начнётся с нуля.",
-        .vpsAdvancedRemoveHostFooter:  "Забывает этот сервер в приложении. На самой машине ничего не меняется.",
+        .vpsAdvancedDeepUninstallFooter: "Удаляет протоколы, ключ и кеш сборки (~300 МБ); следующая установка — с нуля.",
+        .vpsAdvancedRemoveHostFooter:  "Забывает сервер в приложении; на самой машине ничего не меняется.",
 
         // #460: раунды скриншотов 2–4.
         // #461 было: `.heroExitSourceNote` — целое предложение о происхождении
@@ -2165,7 +2263,6 @@ enum L10nTable {
         // Инструкция 26: авто-переключение уехало из настроек на экран с теми
         // самыми протоколами, между которыми оно переключает, и объяснение
         // ужалось с абзаца настроек до одной строки на карточке.
-        .connectAutoSwitchHint:      "Если работающий протокол перестал отвечать — переключиться на другой на том же сервере.",
 
         // #461: при одном установленном протоколе у переключателя был заголовок
         // и ни одной строки. Подсказка называет экран, где это чинится (этот
@@ -2237,7 +2334,7 @@ enum L10nTable {
         .settingsSectionConnection:  "Соединение",
         .settingsSectionProxy:       "Прокси",
         .settingsProxyAddressLabel:  "Адрес для других приложений (SOCKS5)",
-        .updateCheckNowAction:       "Проверить обновления сейчас",
+        .updateCheckNowAction:       "Проверить сейчас",
         .updateUpToDate_fmt:         "%@ — это последняя сборка.",
         .updateCheckFailed:          "Не удалось связаться с GitHub. Попробуй ещё раз чуть позже.",
         .protocolRecreateAction:     "Пересоздать этот протокол",
@@ -2256,8 +2353,8 @@ enum L10nTable {
         .telemostExpiryRenewAction:  "Обновить сейчас",
         // boc #480
         .telemostRenewalAttentionTitle: "Обновление Телемоста требует внимания",
-        .telemostAgeUnknown_fmt:     "Возраст комнаты «%@» неизвестен, поэтому невозможно предсказать срок её действия для автообновления. Обнови комнату через приложение, чтобы начать отсчёт. Протокол на сервере перезапустится, и соединение может оборваться.",
-        .telemostSetupRequired_fmt:  "Автообновление для «%@» не настроено. В разделе «Серверы» проверь связанный сервер, подлинность его SSH-ключей, сохранённые данные SSH, установленный контейнер и вход в Яндекс, затем обнови комнату. Срок её действия может быть неизвестен.",
+        .telemostAgeUnknown_fmt:     "Комната для «%@» добавлена вручную, поэтому приложение не знает, когда она создана. Временная ссылка Телемоста действует 24 часа. Обнови комнату один раз через приложение — дальше olcOS будет продлевать её заранее. При обновлении протокол на сервере перезапустится, и соединение может прерваться.",
+        .telemostSetupRequired_fmt:  "Временная ссылка Телемоста действует 24 часа, поэтому комнату для «%@» нужно обновлять ежедневно. Чтобы olcOS делал это сам, открой связанный сервер на вкладке «Серверы» и войди в Яндекс.",
         .telemostCreationFailed_fmt: "Не удалось создать комнату для «%@». Сохранённая комната и её возраст не изменились. Открой её настройки в разделе «Серверы», проверь вход в Яндекс и повтори попытку.",
         .telemostApplyUnconfirmed_fmt: "Сервер не подтвердил обновление для «%@». Комната на сервере могла измениться, а могла остаться прежней. Сохранённая комната и её возраст не изменились. До явного обновления или изменения сохранённой комнаты автоматические попытки приостановлены. Перед повторной попыткой проверь или восстанови конфигурацию в разделе «Серверы».",
         .telemostApplyCandidate_fmt: "ID новой комнаты, которую пыталось применить приложение: %@. Используй его только после проверки конфигурации сервера.",
@@ -2282,5 +2379,126 @@ enum L10nTable {
         .sshHostKeyResetDone: "Сохранённый ключ сервера забыт. Теперь можно повторить действие с сервером. При следующем SSH-подключении приложение автоматически запомнит полученный ключ.",
         // eoc #481
         .later:                      "Позже",
+        .addFlowStepAccess: "Доступ",
+        .addFlowStepCheck: "Проверка",
+        .addFlowStepProtocols: "Протоколы",
+        .addFlowStepRoom: "Комната",
+        .addFlowStepInstall: "Установка",
+        .addFlowStepCounter_fmt: "Шаг %d из %d",
+        .addFlowNext: "Далее",
+        .addFlowBack: "Назад",
+        .addFlowAccessLead: "Куда ставим olcOS? Данные входа хранятся только в Keychain этого устройства.",
+        .addFlowKeyPasted_fmt: "Ключ вставлен · %@",
+        .addFlowKeyReplace: "Заменить ключ",
+        .addFlowKeyNotShownNote: "После вставки ключ больше не показывается.",
+        .addFlowClipboardEmpty: "Буфер обмена пуст",
+        .addFlowLabelMissing: "Введите название",
+        .addFlowHostInvalid: "Введите адрес сервера",
+        .addFlowPortInvalid: "Порт: от 1 до 65535",
+        .addFlowUserMissing: "Введите логин",
+        .addFlowPasswordMissing: "Введите пароль",
+        .addFlowKeyMissing: "Вставьте приватный ключ",
+        .addFlowPassphraseMissing: "Для ключа нужна парольная фраза",
+        .addFlowCheckLead: "Подключаемся по SSH и смотрим, что уже есть на сервере.",
+        .addFlowCheckRunning: "Подключаемся по SSH…",
+        .addFlowCheckOK: "Сервер отвечает",
+        .addFlowCheckFailed: "Не удалось подключиться",
+        .addFlowTofuFirstTitle: "Первое подключение",
+        .addFlowTofuFirstBody: "Ключ SSH сервера будет запомнен сейчас. Если он изменится, приложение заблокирует подключение и предупредит.",
+        .addFlowTofuKnownTitle: "Ключ сервера известен",
+        .addFlowTofuKnownBody: "Совпадает с сохранённым ранее для этого адреса.",
+        .addFlowTofuMismatchTitle: "Ключ сервера изменился",
+        .addFlowFactOS: "Система",
+        .addFlowFactArch: "Архитектура",
+        .addFlowFactRuntime: "Контейнеры",
+        .addFlowFactRuntimeNone: "Не найдены — установщик поставит podman",
+        .addFlowFactExisting_fmt: "olcOS уже установлен: %@",
+        .addFlowFactExistingNone: "olcOS ещё не установлен",
+        .addFlowFactUnknown: "Неизвестно",
+        .addFlowProtocolsLead: "Выбери сервисы, через которые пойдёт туннель. У каждого будет своё подключение.",
+        .addFlowBadgeRecommended: "Рекомендуемый старт",
+        .addFlowBadgeAlternative: "Альтернатива",
+        .addFlowBadgePrimary: "Основной",
+        .addFlowNeedsYandex: "Нужен аккаунт Яндекса",
+        .addFlowTransportFor_fmt: "Транспорт для %@",
+        .addFlowPickAtLeastOne: "Выберите хотя бы один сервис",
+        .addFlowRoomLead: "Каждому сервису нужна комната, к которой подключится сервер.",
+        .addFlowYandexSignInBody: "Комната Телемоста создаётся от вашего аккаунта Яндекса и передаётся серверу. Используйте одноразовый аккаунт — токен входа хранится только в Keychain.",
+        .addFlowTelemostCreating: "Создаём комнату Телемоста…",
+        .addFlowTelemostCreated: "Комната создана",
+        .addFlowTelemostCreatedBody: "Сервер будет установлен с этой комнатой. Ссылка действует 24 часа.",
+        .addFlowTelemostFailed: "Не удалось создать комнату",
+        .addFlowJitsiInstance: "Инстанс Jitsi",
+        .addFlowJitsiInstanceNote: "Публичные инстансы появляются и исчезают — проверьте адрес в браузере.",
+        .addFlowJitsiCustom: "Свой адрес",
+        .addFlowJitsiRoomName: "Название комнаты",
+        .addFlowJitsiRoomHint: "Латиница и цифры. Пусто — сервер придумает сам.",
+        .addFlowRoomMissing_fmt: "Укажите комнату для %@",
+        .addFlowInstallLead: "Проверьте сводку и запускайте. Сервер собирает olcOS сам, это займёт несколько минут.",
+        .addFlowSummaryServer: "Сервер",
+        .addFlowSummaryProtocols: "Протоколы",
+        .addFlowInstallRunning: "Устанавливаем…",
+        .addFlowInstallDone: "Сервер готов",
+        .addFlowInstallFailed: "Установка не удалась",
+        .addFlowInstallFailedHint: "Подробности в Журнале → VPS. Сервер остаётся в списке — установку можно повторить оттуда.",
+        .addFlowResultConnections: "Подключения",
+        .addFlowResultPending: "Подключения появятся во вкладке «Подключения».",
+        .installOptionsLead: "Добавьте протокол на этот сервер. Ключ шифрования общий с уже установленными.",
+        .throughputKBps_fmt: "%@ КБ/с",
+        .throughputMBps_fmt: "%@ МБ/с",
+        .throughputA11y_fmt: "Загрузка %@, отдача %@",
+        .throughputEstimateA11y_fmt: "Около %@ через локальный SOCKS5-порт — оценка по трафику loopback, без разделения на приём и отдачу",
+        .carrierJitsiDesc: "Открытая платформа видеоконференций (Jitsi Meet). Комната задаётся адресом инстанса и именем; регистрация не нужна. Рекомендуемый старт вместе с DataChannel.",
+        .carrierTelemostDesc: "Сервис видеовстреч Яндекса. Нужен аккаунт Яндекса: комната создаётся через Телемост, обычная ссылка живёт 24 часа, поэтому приложение умеет обновлять комнату. Трафик идёт видеопотоком (VP8).",
+        .carrierWbstreamDesc: "Сервис онлайн-встреч и трансляций от Wildberries. Работает без аккаунта как гость через видеотранспорты (VP8, SEI, Video); для DataChannel нужен токен аккаунта.",
+        .transportDatachannelDesc: "Байты идут по нативному каналу данных сервиса. Самый простой и быстрый путь; стабилен с Jitsi. С WB Stream доступен только с токеном аккаунта.",
+        .transportVp8channelDesc: "Данные упакованы в видеокадры формата VP8 (KCP поверх видео). Основной видеопуть для WB Stream и Телемоста.",
+        .transportSeichannelDesc: "Данные спрятаны в служебных блоках H.264 (SEI NAL), с подтверждениями и повтором. Запасной вариант для WB Stream и Jitsi.",
+        .transportVideochannelDesc: "Данные кодируются как визуальные кадры (QR/плитки) в VP8 на чистом Go, с подтверждениями. Экспериментальный транспорт; в режиме VPN не поддерживается.",
+        .vpsSnapshotRefreshing: "Обновляется…",
+        .settingsCarrierEndpointsRow: "Исключения для другого прокси",
+        .settingsCarrierEndpointsEmpty: "Сначала добавь подключение — адреса берутся из его комнаты.",
+        .settingsBotsServersHeader: "На серверах",
+        .settingsBotsServersFooter: "Нажми на сервер, чтобы проверить, установить или удалить его бота.",
+        .settingsConnectionSummary_fmt: "Старт %d с · проверка каждые %d с",
+        .settingsTransportSummary_fmt: "%d кадров/с · пачка %d",
+        .settingsDiagnosticsSummary_fmt: "%@ · источников IP: %d",
+        .settingsConnectionsCount_fmt: "Подключений: %d",
+        .settingsBotsCount_fmt: "Ботов: %d",
+        .protocolAboutAction: "О протоколе",
+        .protocolAboutHide: "Скрыть описание",
+        .shareServerTitle_fmt: "Поделиться: %@",
+        .shareServerProtocolsHeader: "Подключение по протоколу",
+        .shareServerNoProtocols: "На этом сервере пока нет подключений.",
+        .shareFullAccessPasswordSub: "Ссылка содержит SSH-логин и пароль.",
+        .shareFullAccessKeySub: "Ссылка содержит SSH-логин и полный приватный ключ.",
+        .shareFullAccessConfirmTitle: "Поделиться полным доступом?",
+        .shareFullAccessConfirmAction: "Продолжить",
+        .shareFullAccessConfirmPassword: "Ссылка будет содержать SSH-логин и пароль. Любой, у кого она есть, получит полный контроль над сервером.",
+        .shareFullAccessConfirmKey: "Ссылка будет содержать полный приватный SSH-ключ (и пароль к нему, если есть). Любой, у кого она есть, получит полный контроль над этим сервером — и над всеми серверами, принимающими этот ключ.",
+        .shareFullAccessWarningKey: "Эта ссылка содержит SSH-логин и полный приватный ключ. Любой, у кого она есть, получит полный контроль над этим сервером — и над любым другим, принимающим этот ключ. Делись только с тем, кому доверяешь администрирование.",
+        .settingsUpdateCheckOn: "Проверка раз в сутки",
+        .settingsUpdateCheckOff: "Автопроверка отключена",
+        .sshKeyStored_fmt: "Ключ %@ сохранён в Keychain",
+        .sshKeyReplaceAction: "Заменить ключ",
+        .actionUpdateSub: "Обновляет ядро olcOS на VPS. Само приложение обновляется в Настройках.",
+        .vpsAdvancedOverviewHeader: "Обзор",
+        .vpsAdvancedActionsHeader: "Действия",
+        .vpsAdvancedRecoverSub: "Восстановить запись подключения для установленного контейнера.",
+        .healthActionSharedRecordNote: "Это подключение получено с другого устройства: ключ и комнату обновляет владелец сервера. Попроси у него новую ссылку или QR-код.",
+        .deviceNameSectionHeader: "Это устройство",
+        .deviceNameLabel: "Имя в комнате",
+        .deviceNameRegenerate: "Новое имя",
+        .deviceNameFooter: "Два случайных слова и число, сгенерированные на этом устройстве. При подключении оно подставляется вместо «default», поэтому одна общая ссылка работает на нескольких устройствах одновременно. Ничего о телефоне или о тебе в имени нет. Новое имя применяется со следующего подключения.",
+        .fieldRevealSecret: "Показать",
+        .fieldHideSecret: "Скрыть",
+        .roomIDPlaceholder: "Вставь ID комнаты",
+        .roomIDLinkHint: "Можно вставить ссылку на встречу Телемоста — она сократится до ID.",
+        .wbTokenPlaceholder: "Вставь токен",
+        .formAccessSectionHeader: "Доступ",
+        .healthChipNotChecked: "Не проверено",
+        .healthChipWas_fmt: "было %@",
+        .healthChipNoData: "Нет данных",
+        .shareRecipientHint: "Эту ссылку понимает только olcOS. Получатель ставит olcOS, открывает Подключения → + → «Вставить URI» или сканирует твой QR-код.",
     ]
 }

@@ -119,6 +119,7 @@ struct ReconfigureOptionsView: View {
                 infoSection
             }
             .signalFormChrome() // #490 was: default grouped-form chrome.
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.reconfigureTitle.localized())
             .navigationBarTitleDisplayMode(.inline)
             // #262: shared sheet chrome (✕ close + full-width primary footer).
@@ -130,39 +131,47 @@ struct ReconfigureOptionsView: View {
     // MARK: Sections
 
     private var carrierSection: some View {
-        // #455 (editorial): match InstallOptionsView — a header + a guidance
-        // footer so the carrier choice is explained like every sibling section.
         Section {
-            // #490 was: OlcChipPicker; same options/bindings, native Signal rows.
-            ServerSignalOptions(selection: $carrier,
-                          options: CarrierTransportMatrix.carriers.map { ($0, CarrierTransportMatrix.carrierLabel($0)) })
+            ServerSignalOptions(
+                selection: $carrier,
+                options: CarrierTransportMatrix.carriers.map { ($0, CarrierTransportMatrix.carrierLabel($0)) },
+                details: Self.carrierDetails)
                 .onChange(of: carrier) { _, c in
                     transport = CarrierTransportMatrix.defaultTransport(for: c)
                 }
         } header: {
             SignalSectionHeader(L10n.sectionCarrier.localized())
-        } footer: {
-            // #471: B9 — a Form footer already renders at the caption step;
-            // `.caption2` only pushed it BELOW the scale. was: .font(.caption2)
-            Text(L10n.carrierChoiceFooter.localized())
         }
-        .signalFormRows() // #490: retain native rows on Signal surfaces.
+        .signalFormRows()
+    }
+
+    /// One verified line per carrier / transport (dev-notes/PROTOCOLS.md), drawn
+    /// under the option name instead of a footer paragraph.
+    private static var carrierDetails: [String: String] {
+        Dictionary(uniqueKeysWithValues: CarrierTransportMatrix.carriers.compactMap { id in
+            ProtocolDescriptions.carrier(id).map { (id, $0) }
+        })
+    }
+
+    private static var transportDetails: [String: String] {
+        Dictionary(uniqueKeysWithValues: CarrierTransportMatrix.transports.compactMap { id in
+            ProtocolDescriptions.transport(id).map { (id, $0) }
+        })
     }
 
     private var transportSection: some View {
         Section {
-            // (audit) options carry disabled+reason for the ✗ combos.
-            // #490 was: OlcChipPicker; same options/bindings, native Signal rows.
-            ServerSignalOptions(selection: $transport, options: transportOptions)
+            // Options carry disabled + reason for the ✗ carrier/transport combos.
+            ServerSignalOptions(selection: $transport, options: transportOptions,
+                                details: Self.transportDetails)
+            if !transportFooter.isEmpty {
+                FormNote(text: transportFooter)
+                    .listRowSeparator(.hidden)
+            }
         } header: {
             SignalSectionHeader(L10n.transportSectionHeader.localized())
-        } footer: {
-            // #470: empty for every transport but videochannel now (see transportFooter).
-            if !transportFooter.isEmpty {
-                Text(transportFooter)   // #471: B9 — a Form footer is already a caption
-            }
         }
-        .signalFormRows() // #490: retain native rows on Signal surfaces.
+        .signalFormRows()
     }
 
     /// #456: offer the last room used with this carrier instead of asking for a
@@ -181,16 +190,15 @@ struct ReconfigureOptionsView: View {
     private var roomIDSection: some View {
         if requiresRoomID {
             Section {
-                TextField(L10n.fieldRoomID.localized(), text: $roomID)
-                    .font(.system(.body, design: .monospaced))
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
+                // Round 2 was: a bare monospaced TextField whose only label was
+                // its placeholder, so a filled field had no caption at all. The
+                // shared FormField draws label / plate / helper like the other sheets.
+                FormField(label: L10n.fieldRoomID.localized(),
+                          placeholder: L10n.roomIDPlaceholder.localized(),
+                          text: $roomID, mono: true, helper: roomFooter)
                 roomSuggestion   // #456
             } header: {
                 SignalSectionHeader(L10n.roomIDSectionHeader.localized())
-            } footer: {
-                // #471: B9 — a Form footer is already a caption. was: .font(.caption2)
-                Text(roomFooter)
             }
             .signalFormRows() // #490: retain native rows on Signal surfaces.
         } else {
@@ -210,16 +218,12 @@ struct ReconfigureOptionsView: View {
     private var jitsiSection: some View {
         if carrier == "jitsi" {
             Section {
-                TextField(L10n.fieldJitsiURL.localized(), text: $jitsiBaseURL)
-                    .font(.system(.body, design: .monospaced))
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.URL)
+                FormField(label: L10n.jitsiServerHeader.localized(),
+                          placeholder: L10n.fieldJitsiURL.localized(),
+                          text: $jitsiBaseURL, keyboard: .URL, mono: true,
+                          helper: L10n.jitsiServerFooter.localized())
             } header: {
                 SignalSectionHeader(L10n.jitsiServerHeader.localized())
-            } footer: {
-                // #471: B9 — a Form footer is already a caption. was: .font(.caption2)
-                Text(L10n.jitsiServerFooter.localized())
             }
             .signalFormRows() // #490: retain native rows on Signal surfaces.
         }
@@ -230,15 +234,14 @@ struct ReconfigureOptionsView: View {
     private var wbTokenSection: some View {
         if carrier == "wbstream" {
             Section {
-                SecureField(L10n.wbTokenFieldLabel.localized(), text: $wbToken)
-                    .font(.system(.body, design: .monospaced))
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
+                // Round 2 was: a bare SecureField with no plate, label or reveal
+                // toggle — the row read as empty. Same shared field as Install.
+                FormField(label: L10n.wbTokenFieldLabel.localized(),
+                          placeholder: L10n.wbTokenPlaceholder.localized(),
+                          text: $wbToken, secure: true, mono: true,
+                          helper: L10n.wbTokenFooter.localized())
             } header: {
                 SignalSectionHeader(L10n.wbTokenHeader.localized())
-            } footer: {
-                // #471: B9 — a Form footer is already a caption. was: .font(.caption2)
-                Text(L10n.wbTokenFooter.localized())
             }
             .signalFormRows() // #490: retain native rows on Signal surfaces.
         }
@@ -250,12 +253,13 @@ struct ReconfigureOptionsView: View {
             // transport (+ auth.token); it does NOT write vp8:/sei: tuning
             // blocks, so after a transport switch the server runs its engine
             // defaults (master overlays only keys present in the YAML).
-            Text(L10n.reconfigureInfoFooter.localized() + "\n" +
-                 L10n.reconfigureTransportTuningFooter.localized())
-                .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
-                .foregroundStyle(.tertiary)
+            // Round 2: the same neutral FormNote the Add-protocol sheet ends with.
+            FormNote(text: L10n.reconfigureInfoFooter.localized() + " " +
+                           L10n.reconfigureTransportTuningFooter.localized())
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowSeparator(.hidden)
         }
-        .signalFormRows() // #490: retain native rows on Signal surfaces.
     }
 
     // MARK: Logic
@@ -266,6 +270,11 @@ struct ReconfigureOptionsView: View {
         var cleanedRoom = roomID
             .components(separatedBy: .whitespacesAndNewlines)
             .joined()
+        // A pasted invite link becomes the bare id the server stores; see
+        // TelemostRoomService.normalizedRoomInput for why the string must match.
+        if carrier == "telemost" {
+            cleanedRoom = TelemostRoomService.normalizedRoomInput(roomID)
+        }
         // #451: normalise a short jitsi room name into the full URL the server
         // requires — the same rule srv.sh applies at install (base + "/" + name;
         // full http(s) URLs and host/room forms pass through verbatim).
@@ -312,36 +321,19 @@ struct ReconfigureOptionsView: View {
 
     // MARK: Footer helpers
 
-    /// #470: mirrors InstallOptionsView.transportFooter (#457). The ★/⚠/"no data"
-    /// sentence was a lab verdict at pin time presented as a measurement, and it
-    /// printed the RAW carrier id ("★ Recommended for telemost.") where the install
-    /// sheet showed «Яндекс Телемост». The silent `.fail` gate in
-    /// `transportOptions` survives; the server-defaults note stays for
-    /// videochannel only — a seichannel reconfigure's tuning reset is already
-    /// stated by `reconfigureTransportTuningFooter` in the info section.
-    // boc #470 was:
-    //     let compat: String
-    //     switch CarrierTransportMatrix.compat(carrier: carrier, transport: transport) {
-    //     case .recommended: compat = L10n.matrixRecommended_fmt.formatted(carrier)
-    //     case .ok:          compat = L10n.matrixWorks_fmt.formatted(carrier)
-    //     case .question:    compat = L10n.matrixQuestion_fmt.formatted(carrier)
-    //     case .fail:        compat = L10n.matrixFail_fmt.formatted(carrier)
-    //     case .unknown:     compat = L10n.matrixUnknown_fmt.formatted(carrier)
-    //     }
-    //     if transport == "seichannel" || transport == "videochannel" {
-    //         return compat + "\n" + L10n.transportUsesServerDefaults_fmt.formatted(transport)
-    //     }
-    //     return compat
-    // eoc #470
+    /// The server-defaults note applies to videochannel only; a seichannel
+    /// tuning reset is already stated by `reconfigureTransportTuningFooter`.
     private var transportFooter: String {
         transport == "videochannel"
             ? L10n.transportUsesServerDefaults_fmt.formatted(CarrierTransportMatrix.transportLabel(transport))
             : ""
     }
 
+    /// Room helper under the field. Telemost also says a pasted invite link is
+    /// accepted (submit() collapses it via `TelemostRoomService.normalizedRoomInput`).
     private var roomFooter: String {
         switch carrier {
-        case "telemost": return L10n.roomIDTelemostHint.localized()
+        case "telemost": return L10n.roomIDTelemostHint.localized() + " " + L10n.roomIDLinkHint.localized()
         case "wbstream": return L10n.roomIDWbstreamHint.localized()
         default:         return ""
         }

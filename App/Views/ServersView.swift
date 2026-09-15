@@ -47,9 +47,6 @@ struct ServersView: View {
     /// Per-tab lifecycle, NOT a shared singleton — intentional split from
     /// `TunnelManager.shared` / `SettingsStore.shared` / `LogStore.shared`.
     @StateObject  private var provisioner = Provisioner()
-    /// #419: bot registry (shared with Settings). The per-server bot sheet picks
-    /// a bot from it; the token is read from the Keychain at deploy time.
-    @ObservedObject var botStore: BotStore
     /// #452: the tunnel, so a protocol row on the host card can connect directly
     /// ("pick which protocol to tunnel through, right from Manage VPS").
     @ObservedObject var tunnel: TunnelManager
@@ -66,7 +63,6 @@ struct ServersView: View {
     /// renewing the live telemost carrier (#463) — and confirming it restarted
     /// the wrong container. Retry re-opens THIS request instead.
     @State private var lastReconfigure    : [UUID: ReconfigureRequest] = [:]
-    @State private var botConfigFor   : ServerHost?   // #419: per-server bot sheet
     // #339 was: logsPayload (ContainerLogsPayload?) — the container-logs sheet
     // is gone; the action routes to the Logs tab instead.
     // #258 was: readiness[id] + activeHostID (two competing display sources).
@@ -121,8 +117,7 @@ struct ServersView: View {
     // regression the #457 audit note above is about.
     @State private var advancedForHost: AdvancedHostRoute?
     @State private var foundContainers: [SSHRunner.FoundContainer] = []
-    @State private var shareConn      : ConnectionRecord?   // #304: share the host's linked connection
-    @State private var shareFullAccess: FullAccessShareRequest?   // #135: full-access (SSH) share
+    @State private var shareServer    : ServerShareRequest?   // card "Share": pick a protocol or full access
     @State private var alertText           : String?
     @State private var removeHost          : ServerHost?
     @State private var uninstallConfirmHost    : ServerHost?
@@ -149,6 +144,9 @@ struct ServersView: View {
     // for `carrierRows`. `carrierRowsAt` is when each host's rows were last
     // actually READ, so the entry pass can skip a listing the card just made.
     @State private var carrierListInFlight  : Set<UUID> = []
+    /// Hosts whose background readiness probe is running right now — drives
+    /// the card's quiet "updating…" note over the last known snapshot.
+    @State private var probingHostIDs       : Set<UUID> = []
     @State private var carrierRowsAt        : [UUID: Date] = [:]
     // eoc #470
     @State private var addProtocolFor       : ServerHost?
@@ -284,22 +282,33 @@ struct ServersView: View {
             // same job one layer down: re-read the servers, then re-verify what
             // runs on them.
             .refreshable { await refreshAllHosts() }
-            // #374: structured sweep loop tied to the view lifecycle — SwiftUI
-            // cancels it when the view disappears, replacing the old
-            // onAppear-start / onDisappear-invalidate Timer pair.
-            // #482 was: .task { await autoPingOnce() } — adding a host never
-            // restarted it. IDs only: a probe's own host metadata writes must
-            // not cancel/restart the pass.
+            // Lifecycle-bound first readings: SwiftUI cancels the task when the
+            // view disappears. IDs only, so a probe's own host metadata writes
+            // do not restart the pass.
             .task(id: serverStore.hosts.map(\.id)) {
+                seedFromSnapshots()
+                // Round 2 (D): the first frame is drawn from the seeded
+                // snapshot alone; sockets open ≈300 ms later.
+                guard await Self.deferPastFirstFrame() else { return }
                 await autoPingOnce()
                 await checkNeverProbedHosts()
             }
-            // boc #456: requirement 4 — entering Manage VPS re-checks by itself,
-            // so the user never has to press a button to learn the truth. A
-            // TabView child reliably gets `onAppear` per tab entry (LogsView's
-            // #332 visibility gate relies on exactly that), so no selectedTab
-            // plumbing from MainTabView is needed.
-            .onAppear { Task { await refreshOnEntry() } }
+            // Entering the tab shows the persisted snapshot at once and
+            // re-checks in the background, throttled per host.
+            // Round 2 (D): the pass is DEFERRED past the first frame. It used
+            // to start in the same run-loop turn as the appearance — the
+            // Keychain read in `silentProbe`, the JSON encode + UserDefaults
+            // write `pruneDanglingLinks` may do, and the SSH dial all competed
+            // with the tab transition. Nothing about WHAT runs changed: once
+            // per foreground (`claimServerPass`), 60 s per host
+            // (`shouldRecheckHost`), pull-to-refresh forced.
+            .onAppear {
+                seedFromSnapshots()
+                Task(priority: .utility) {
+                    guard await Self.deferPastFirstFrame() else { return }
+                    await refreshOnEntry()
+                }
+            }
             // #469 was: `.onDisappear { health.cancelAll() }` — both tabs verify
             // the SAME records through ONE sequential coordinator, and a tab
             // switch fires the new tab's onAppear and the old tab's onDisappear
@@ -388,11 +397,15 @@ struct ServersView: View {
     private func hostSheets(_ content: some View) -> some View {
         content
             .sheet(isPresented: $showAdd) {
-                // #295: pass every existing label so the sheet can reject a
-                // duplicate (case-insensitive / sanitised-prefix) name.
-                // #451: the sheet now returns an SSHSecret (password OR key).
-                AddServerHostView(otherLabels: serverStore.hosts.map(\.label)) { host, secret in
+                // Guided add flow: access → probe → protocols → room → install.
+                // The store must hold the secret before `install` runs, because
+                // the installer resolves credentials from the store.
+                AddServerFlowView(otherLabels: serverStore.hosts.map(\.label),
+                                  serverStore: serverStore,
+                                  connections: connections,
+                                  provisioner: provisioner) { host, secret, primary, extras in
                     serverStore.add(host, secret: secret)
+                    Task { await install(host, primary: primary, extras: extras) }
                 }
             }
             .sheet(item: $editHost) { host in
@@ -435,24 +448,13 @@ struct ServersView: View {
                     }
                 }
             }
-            // #419: per-server bot settings sheet. #451: passes the SSHSecret.
-            .sheet(item: $botConfigFor) { host in
-                BotSettingsView(host: host, botStore: botStore,
-                                provisioner: provisioner,
-                                secret: serverStore.secret(for: host))
-            }
-            // #339 was: .sheet(item: $logsPayload) { ContainerLogsView(payload:) }
             .sheet(item: $scanFor) { host in
                 containerScanSheet(host: host)
             }
-            // #304: "Share connection" moved here from the Connections tab.
-            .sheet(item: $shareConn) { conn in
-                ShareConnectionView(conn: conn)
-            }
-            // #135: full-access (co-admin) share — the same sheet, with the SSH
-            // payload that unlocks the destructive opt-in section.
-            .sheet(item: $shareFullAccess) { req in
-                ShareConnectionView(conn: req.conn, fullAccess: req.payload)
+            .sheet(item: $shareServer) { req in
+                ServerShareSheet(hostLabel: req.hostLabel, options: req.options,
+                                 fullAccess: req.fullAccess,
+                                 startWithFullAccess: req.startWithFullAccess)
             }
     }
 
@@ -702,6 +704,7 @@ struct ServersView: View {
     private func removeFromList(_ host: ServerHost) {
         if let idx = serverStore.hosts.firstIndex(where: { $0.id == host.id }) {
             serverStore.remove(at: IndexSet([idx]))
+            health.forgetHost(host.id)
         }
     }
 
@@ -732,8 +735,97 @@ struct ServersView: View {
     /// base from persisted data: a known container → `.stopped` (so Start/Stop and
     /// the metrics surface, and we never offer a reinstall by mistake); otherwise
     /// `.unknown` ("tap Check"). Never asserts a running container without a probe.
+    /// What the card shows: the live state, else the persisted last-known
+    /// snapshot, else `.unknown` ("checking") — never a guessed "stopped".
     private func displayState(_ host: ServerHost) -> HostDisplay {
-        display[host.id] ?? .base(.seed(lastContainerName: host.lastContainerName))
+        if let live = display[host.id] { return live }
+        if let snap = health.hostSnapshot(for: host.id) { return .base(HostBase(snapshot: snap.base)) }
+        return .base(.unknown)
+    }
+
+    /// Fill the in-memory clocks and machine numbers from the persisted
+    /// snapshots for hosts this view has not read yet, so a fresh view shows
+    /// the last known reading with its true age instead of empty slots.
+    private func seedFromSnapshots() {
+        for host in serverStore.hosts where lastProbe[host.id] == nil {
+            guard let snap = health.hostSnapshot(for: host.id) else { continue }
+            lastProbe[host.id]   = snap.probedAt
+            lastProbeOK[host.id] = snap.probedAt
+            // Round 2 (D): the protocol rows too — a cold start used to show
+            // "not read yet" until an SSH listing returned, although the last
+            // listing was persisted alongside the base. Only a non-empty
+            // listing is seeded (an empty one is re-read, never asserted), and
+            // its own read clock comes with it so the entry pass applies the
+            // same staleness rule as for a view that stayed alive.
+            if carrierRows[host.id] == nil, let seeded = Self.seededRows(snap) {
+                carrierRows[host.id]   = seeded
+                carrierRowsAt[host.id] = snap.carriersReadAt ?? snap.probedAt
+            }
+            if display[host.id] == nil { display[host.id] = .base(HostBase(snapshot: snap.base)) }
+            if vpsStats[host.id] == nil, let disk = snap.disk, let ram = snap.ram, let uptime = snap.uptime {
+                vpsStats[host.id] = SSHRunner.VPSStats(disk: disk, ram: ram, uptime: uptime)
+            }
+            // A nil ping is "failed or not measured" — not evidence of
+            // unreachability, so only a real number is seeded.
+            if let ms = snap.pingMs, pingLatencies[host.id] == nil {
+                pingLatencies[host.id] = ms
+                lastPing[host.id] = snap.probedAt
+            }
+        }
+    }
+
+    /// Persist a confirmed base with the machine numbers currently on record.
+    private func recordSnapshot(_ host: ServerHost, base: HostBase) {
+        let stats = vpsStats[host.id]
+        // The rows ride along from the previous snapshot: a probe says nothing
+        // about them. A base without a container has no rows to remember.
+        let previous = health.hostSnapshot(for: host.id)
+        health.noteHostSnapshot(HostSnapshot(base: base.snapshotBase, probedAt: Date(),
+                                             disk: stats?.disk, ram: stats?.ram, uptime: stats?.uptime,
+                                             pingMs: pingLatencies[host.id] ?? nil,
+                                             carriers: base.hasContainer ? previous?.carriers : nil,
+                                             carriersReadAt: base.hasContainer ? previous?.carriersReadAt : nil),
+                                for: host.id)
+    }
+
+    /// The rows a persisted snapshot can seed: nil when it holds none or an
+    /// empty listing (which is re-read rather than shown as "no protocols").
+    nonisolated static func seededRows(_ snap: HostSnapshot) -> [SSHRunner.CarrierInfo]? {
+        guard let carriers = snap.carriers, !carriers.isEmpty else { return nil }
+        return carriers.map(\.carrierInfo)
+    }
+
+    /// Store the rows a successful listing returned (or drop them after a
+    /// failed one, #470) in the host's persisted snapshot, if it has one.
+    private func recordCarriers(_ rows: [SSHRunner.CarrierInfo]?, for hostID: UUID, at: Date?) {
+        guard var snap = health.hostSnapshot(for: hostID) else { return }
+        let carriers = rows?.map { HostSnapshotCarrier($0) }
+        guard snap.carriers != carriers || snap.carriersReadAt != at else { return }
+        snap.carriers      = carriers
+        snap.carriersReadAt = at
+        health.noteHostSnapshot(snap, for: hostID)
+    }
+
+    /// Round 2 (D): the tab's first frame is the seeded snapshot; every
+    /// socket, Keychain read and UserDefaults write waits this long after the
+    /// appearance so the transition is not competing with them. False when the
+    /// owning task was cancelled during the wait (the view went away).
+    static let firstFrameDeferMilliseconds = 300
+    nonisolated static func deferPastFirstFrame() async -> Bool {
+        do {
+            try await Task.sleep(for: .milliseconds(firstFrameDeferMilliseconds))
+        } catch {
+            return false
+        }
+        return !Task.isCancelled
+    }
+
+    /// The #470 / #452 lazy-load guard, in one place so the deferred task can
+    /// re-ask it after the wait.
+    private func shouldLazyListRows(_ host: ServerHost) -> Bool {
+        carrierRows[host.id] == nil && host.lastContainerName != nil
+            && !actionsDisabled && !entryRefreshing
+            && !carrierListInFlight.contains(host.id)
     }
 
     /// The base under whatever is currently shown (running/failed keep the base
@@ -836,37 +928,54 @@ struct ServersView: View {
     // still says "not checked" in its own chip, which is the honest place to
     // say it.
 
-    /// #304: the ConnectionRecord this host installed/owns (by `lastConnectionID`),
-    /// if still present — drives the "Share connection" item on the server card.
+    /// The ConnectionRecord this host installed/owns (by `lastConnectionID`),
+    /// if still present.
     private func linkedConnection(_ host: ServerHost) -> ConnectionRecord? {
         guard let id = host.lastConnectionID else { return nil }
         return connections.connections.first { $0.id == id }
     }
 
-    /// #135: builds the full-access (co-admin) share request for a host + its
-    /// linked connection — the connection URI plus the SSH host/port/login and
-    /// the password read live from the Keychain (ServerHostStore → KeychainHelper).
-    /// Returns nil when no password is stored, so the destructive item silently
-    /// no-ops rather than sharing a credential-less, useless blob.
-    /// #451: key-auth hosts NEVER produce a request — a full-access link would
-    /// have to embed the private key (a far bigger blast radius than a
-    /// password, and beyond QR capacity); the menu item explains instead
-    /// (see menuItems), and this guard is the defence-in-depth backstop.
-    private func fullAccessRequest(_ host: ServerHost, conn: ConnectionRecord) -> FullAccessShareRequest? {
-        guard host.authMethod != .privateKey,
-              let password = serverStore.password(for: host) else { return nil }
+    /// The full-access payload for a host: the primary connection URI plus the
+    /// SSH coordinates and the ONE stored credential — the password, or the
+    /// private key (+ passphrase) for key hosts — read live from the Keychain.
+    /// nil when nothing is stored, so a credential-less link is never offered.
+    private func fullAccessPayload(_ host: ServerHost, conn: ConnectionRecord) -> FullAccessShare? {
+        guard let secret = serverStore.secret(for: host) else { return nil }
         let uri: String
         switch conn.details {
         case .olcrtc(let p): uri = OlcrtcURI.encode(p)
         }
-        let payload = FullAccessShare(
+        var payload = FullAccessShare(
             uri: uri,
             label: host.label,
             sshHost: host.host,
             sshPort: host.port,
             sshUsername: host.username,
-            sshPassword: password)
-        return FullAccessShareRequest(conn: conn, payload: payload)
+            sshPassword: "")
+        switch secret {
+        case .password(let pw):
+            payload.sshPassword = pw
+        case .privateKey(let text, let passphrase):
+            payload.sshPrivateKey = text
+            payload.sshKeyPassphrase = (passphrase?.isEmpty == false) ? passphrase : nil
+        }
+        return payload
+    }
+
+    /// The card's share sheet: every protocol connection of this host (the
+    /// linked one first), plus full access when a credential is stored.
+    private func shareRequest(_ host: ServerHost, startWithFullAccess: Bool = false) -> ServerShareRequest? {
+        var records = hostRecords(host)
+        if let linked = linkedConnection(host) {
+            records.removeAll { $0.id == linked.id }
+            records.insert(linked, at: 0)
+        }
+        guard let first = records.first else { return nil }
+        return ServerShareRequest(
+            hostLabel: host.label,
+            options: records.map { ServerShareOption(conn: $0) },
+            fullAccess: fullAccessPayload(host, conn: first),
+            startWithFullAccess: startWithFullAccess)
     }
 
     /// Any host mid-operation. Operations are serialized (one provisioner), so we
@@ -920,6 +1029,7 @@ struct ServersView: View {
             let base = HostDisplay.terminalBase(op: op, probed: resolved, previous: prev)
             // #490 was: withAnimation(.easeInOut(duration: 0.35)).
             withAnimation(serverTransition) { display[host.id] = .base(base) }
+            if resolved != nil { recordSnapshot(host, base: base) }
         } catch {
             let current = display[host.id] ?? .start(op, from: prev)
             withAnimation(serverTransition) { // #490 was: unconditional 0.35s transition.
@@ -956,36 +1066,22 @@ struct ServersView: View {
 
     // MARK: Auto-ping
     //
-    // #374: a single structured sweep loop replaces the old repeating Timer
-    // that re-pinged EVERY host every tick (even mid-SSH-op, even when nothing
-    // had changed). Each pass:
-    //   • does an immediate first ping of any never-pinged host;
-    //   • when auto-ping is on, wakes every `interval` and re-pings ONLY hosts
-    //     whose last ping is older than the interval (skipping fresh ones);
-    //   • skips the periodic sweep entirely while an op is in flight
-    //     (actionsDisabled) — checkServer already pings the host it touches;
-    //   • staggers the per-host probes by a small delay so they don't all fire
-    //     on the same instant.
-    // The loop runs inside `.task`, so SwiftUI cancels it on disappear.
+    // Automatic checking happens once, on entry; after that the pull is the
+    // only re-read. The loop runs inside `.task`, so SwiftUI cancels it on
+    // disappear. Two legacy settings keys behind the old periodic loop stay for
+    // downgrade safety and have no UI.
 
-    /// Small per-host gap so a fleet doesn't fire every probe on one tick (#374).
+    /// Small per-host gap so a fleet doesn't fire every probe on one tick.
     private static let pingStaggerSeconds: Double = 0.4
 
-    /// How long the loop idles between checks while auto-ping is OFF or has no
-    /// positive interval set — so flipping the toggle back ON resumes pinging
-    // boc #474 was: `autoPingLoop` — a `while` loop that TCP-pinged every host
-    // every `vpsAutoPingInterval` seconds (30 by default) for as long as this
-    // tab was on screen, so the app kept working while the user did nothing.
-    // Automatic checking is once, on entry; everything after that is the pull.
-    // The two settings behind the old loop have no UI and are left alone: the
-    // keys stay for downgrade safety and the tests that snapshot them.
     private func autoPingOnce() async {
         await pingNeverPingedHosts()
     }
-    // eoc #474
 
-    // boc #482: membership changes get a first reading without reopening the
-    // once-per-foreground claim or rechecking the rest of the fleet.
+    /// Hosts added since the entry pass get a first reading without reopening
+    /// the once-per-foreground claim or rechecking the rest of the fleet.
+    /// `lastProbe` is seeded from persisted snapshots, so a host with a recent
+    /// snapshot is not "never probed".
     nonisolated static func neverProbedHosts(_ hosts: [ServerHost],
                                              lastProbe: [UUID: Date]) -> [ServerHost] {
         hosts.filter { lastProbe[$0.id] == nil }
@@ -1014,13 +1110,9 @@ struct ServersView: View {
             await refreshCarriers(host.id)
         }
     }
-    // eoc #482
 
-    /// #474: pings every host that has never been pinged in this session.
-    /// Staggered, so a list of servers does not open every socket at once.
-    /// #474 was: `pingDueHosts(force:)` — `force` selected between "never
-    /// pinged" and "older than the interval" for the periodic loop. The loop is
-    /// gone, and with it the only caller that passed false.
+    /// Pings every host that has never been pinged in this session (snapshot
+    /// pings count). Staggered, so a fleet does not open every socket at once.
     private func pingNeverPingedHosts() async {
         let due = serverStore.hosts.filter { lastPing[$0.id] == nil }
         for (i, host) in due.enumerated() {
@@ -1072,10 +1164,15 @@ struct ServersView: View {
                     // #470: not while the on-entry pass is reading this host (it
                     // lists the rows itself) and not on top of a listing already
                     // in flight — the two used to race on first entry.
-                    guard carrierRows[host.id] == nil, host.lastContainerName != nil,
-                          !actionsDisabled, !entryRefreshing,
-                          !carrierListInFlight.contains(host.id) else { return }
-                    Task { await refreshCarriers(host.id) }
+                    // Round 2 (D): rows seeded from the persisted snapshot make
+                    // this a no-op on most cold starts; when it does run, it
+                    // waits past the first frame and re-checks the guards, since
+                    // the deferred entry pass may have claimed the host meanwhile.
+                    guard shouldLazyListRows(host) else { return }
+                    Task(priority: .utility) {
+                        guard await Self.deferPastFirstFrame(), shouldLazyListRows(host) else { return }
+                        await refreshCarriers(host.id)
+                    }
                 }
                 .olcCardRow()
         }
@@ -1099,7 +1196,8 @@ struct ServersView: View {
             addressLine:     addressLine(host),
             headline:        headline(host, state: state),
             progress:        statusBarFraction(state),
-            machineLine:     machineLine(host),            // #471
+            machineLine:     machineLine(host),
+            isRefreshing:    probingHostIDs.contains(host.id) || carrierListInFlight.contains(host.id),
             rows:            carrierRows[host.id] ?? [],
             rowsBusy:        carrierBusyHostID == host.id,
             // #490: show a real list read distinctly from unknown or empty.
@@ -1138,21 +1236,15 @@ struct ServersView: View {
     // which has no container.
     // eoc #471
 
-    /// #459: resolves one host into `ServerAdvancedView`'s inputs. Every row
-    /// keeps the exact state it always set, so each destructive verb still ends
-    /// in the confirmation dialog `hostConfirmations` already owns.
+    /// Resolves one host into `ServerAdvancedView`'s inputs. Each destructive
+    /// verb still ends in the confirmation dialog `hostConfirmations` owns.
+    /// Host metadata is re-resolved on every parent render so an edit or
+    /// adoption made while the screen is open shows up in place.
     private func advancedView(_ host: ServerHost) -> ServerAdvancedView {
-        // boc #490
-        // #490 was: every read/action used the route's opening-time snapshot.
-        // Resolve current host metadata on each parent render, preserving route
-        // identity and all existing callbacks/guards after an edit or adoption.
         let host = ServerPresentationPolicy.currentHost(snapshot: host, hosts: serverStore.hosts)
         return ServerAdvancedView(
             hostLabel:           host.label,
             isKeyAuth:           host.authMethod == .privateKey,
-            // #470 was: `host.lastConnectionID == nil` — a link pointing at a
-            // record the user has since deleted is not a link, but it hid the one
-            // action that could restore the connection.
             hasRecoverOption:    hasContainer(host) && linkedConnection(host) == nil,
             hasLinkedConnection: linkedConnection(host) != nil,
             hasContainer:        hasContainer(host),
@@ -1167,10 +1259,6 @@ struct ServersView: View {
             onUninstall:         { uninstallConfirmHost = host },
             onDeepUninstall:     { deepUninstallConfirmHost = host },
             onRemoveHost:        { removeHost = host },
-            // boc #471: the Machine section — what the card stopped drawing.
-            // `readCaptionText` is unchanged and still the ONLY caller of
-            // `vpsReadAge_fmt`; it dates NUMBERS here instead of dating a claim
-            // the status pill now dates itself.
             addressLine:         addressLine(host),
             machine:             machineStats(host),
             readCaption:         readCaptionText(host),
@@ -1178,8 +1266,6 @@ struct ServersView: View {
             menuItems:           advancedMenuItems(host),
             hasHostKeyMismatch:  hasHostKeyMismatch(host),
             onResetHostKeyTrust: { resetHostKeyTrust(host) })
-        // eoc #490
-            // eoc #471
     }
 
     private func hasHostKeyMismatch(_ host: ServerHost) -> Bool {
@@ -1217,11 +1303,10 @@ struct ServersView: View {
         }
     }
 
-    // boc #490
-    // Complete safe management actions use the existing menu builder unchanged.
-    // The two additional visible routes have exactly the listing's own gates.
+    /// Safe actions on the management screen: the card menu (minus Share)
+    /// plus Logs and Add protocol, with the listing's own gates.
     private func advancedMenuItems(_ host: ServerHost) -> [OlcMenuItem] {
-        var items = menuItems(host)
+        var items = menuItems(host, includeShare: false)
         if hasContainer(host) {
             items.append(.action(L10n.logsTitle.localized(), systemImage: "doc.text") {
                 logsForHost = host
@@ -1234,21 +1319,16 @@ struct ServersView: View {
         }
         return items
     }
-    // eoc #490
 
-    /// #451: a key-auth host can't produce a full-access link (it would have to
-    /// embed the private key), so the tap explains instead of sharing. Lifted
-    /// out of `menuItems` unchanged when the row moved to the Manage screen.
+    /// "Share full access" from the Manage screen: the share sheet opens on
+    /// the full-access confirmation.
     private func presentFullAccessShare(_ host: ServerHost) {
-        guard host.authMethod != .privateKey else {
-            alertText = L10n.shareFullAccessKeyHostUnavailable.localized()
+        guard let req = shareRequest(host, startWithFullAccess: true), req.fullAccess != nil else {
+            alertText = missingCredentialMessage(host)
             return
         }
-        guard let conn = linkedConnection(host),
-              let req = fullAccessRequest(host, conn: conn) else { return }
-        shareFullAccess = req
+        shareServer = req
     }
-    // eoc #459
 
     /// #337: mask the host for display when screenshot-safe mode is on (IP
     /// literals to bullets; hostnames pass through). Display-only — `host.host`
@@ -1278,18 +1358,14 @@ struct ServersView: View {
         ProtocolRowView(
             title:             CarrierTransportMatrix.carrierLabel(row.provider),
             transport:         CarrierTransportMatrix.transportLabel(row.transport),
-            // #471 was: `isPrimary: row.isPrimary` — the row printed a
-            // `primary` tag for it. Which container anchors the deploy dir is
-            // an internal concept; `SSHRunner.CarrierInfo.isPrimary` still
-            // drives the things it actually governs (remove-sibling guards,
-            // rotate-key, the carrier list).
             isLive:            isLiveRow(row),
             isRunningOnServer: Self.isUp(row.status),
             health:            rowHealth(host, row: row),
             menuDisabled:      actionsDisabled || carrierBusyHostID != nil,
             menuItems:         carrierMenuItems(host, row: row),
+            detailLines:       ProtocolDescriptions.lines(carrier: row.provider, transport: row.transport),
             onVerify:          { verifyRow(host, row: row) },
-            onConnect:         { connectVia(host, row: row) }) // #490: visible row action, same method.
+            onConnect:         { connectVia(host, row: row) })
     }
 
     /// #457 was: `row.status.shortLabel.hasPrefix("Up")` repeated at three call
@@ -1522,41 +1598,32 @@ struct ServersView: View {
     //
     // #258's rule still holds one level up: the card's buttons and this menu are
     // still ONE derived action set, resolved here from one host state.
-    private func menuItems(_ host: ServerHost) -> [OlcMenuItem] {
+    /// The card's ⋯ menu: Scan (only while nothing is listed), Share, Edit.
+    /// Per-protocol actions live on the protocol rows, not here.
+    /// `includeShare: false` is the management screen, whose Connection
+    /// section already offers full access.
+    private func menuItems(_ host: ServerHost, includeShare: Bool = true) -> [OlcMenuItem] {
         var items: [OlcMenuItem] = []
 
-        // #468 was: a host-level "Change room / transport" that silently targeted
-        // the PRIMARY protocol. Since #452 the card lists every protocol and each
-        // row carries its own copy of this action, where the target is named. At
-        // host level the same words answer a question the user did not ask —
-        // "which one?" — so the item is gone; the rows own it.
-        //
-        // #468 was: Scan ran unconditionally. #456 moved it out of an `else`
-        // branch to keep it reachable for siblings made outside the app — but
-        // `carrierListScript` globs every server-*.yaml, so those siblings are
-        // now listed on their own. What Scan still answers is the one case the
-        // list cannot: no container is adopted yet (so nothing can be listed at
-        // all), or the recorded name went stale and the listing failed. Offer it
-        // exactly then, and it stops being noise on a healthy card.
+        // Scan answers the one case the listing cannot: no container adopted
+        // yet, or the recorded name went stale and the listing failed.
         if (carrierRows[host.id] ?? []).isEmpty {
             items.append(.action(L10n.actionScanVPS.localized(), systemImage: "magnifyingglass") {
                 Task { await scanContainers(host) }
             })
         }
-        // #419: bot settings — available whether or not a container is installed.
-        // #427: robot glyph (custom asset).
-        items.append(.action(L10n.botSheetTitle.localized(), assetImage: "RobotIcon") {
-            botConfigFor = host
-        })
-
         items.append(.divider)
-        // #304: share the connection this host owns (URI / QR) — the connection
-        // is configured on this card. The FULL-ACCESS share is not here: it
-        // hands over SSH credentials, so it sits on the Manage screen with the
-        // rest of the destructive set (#459).
-        if let conn = linkedConnection(host) {
-            items.append(.action(L10n.shareConnectionTitle.localized(), systemImage: "square.and.arrow.up") {
-                shareConn = conn
+        // Share: pick which protocol connection to hand out, or full access.
+        // Never offered before a connection exists.
+        // Round 2 (D) was: `shareRequest(host) != nil` — which built the full
+        // request, and `fullAccessPayload` inside it read the host's credential
+        // from the Keychain (`serverStore.secret(for:)`) — one or two
+        // synchronous `SecItemCopyMatching` calls PER HOST PER RENDER of the
+        // card list. The menu only needs to know that a connection exists; the
+        // request itself is built in the tap action, once.
+        if includeShare, !hostRecords(host).isEmpty {
+            items.append(.action(L10n.shareAction.localized(), systemImage: "square.and.arrow.up") {
+                shareServer = shareRequest(host)
             })
         }
         items.append(.action(L10n.edit.localized(), systemImage: "pencil") { editHost = host })
@@ -1609,81 +1676,50 @@ struct ServersView: View {
     }
 
     private func refreshOnEntry() async {
-        pruneDanglingLinks()   // #470
-        // #458: the user's switch. Off ⇒ nothing happens on entry and every
-        // reading keeps its honest age until they ask for a check themselves.
+        pruneDanglingLinks()
+        // The user's switch. Off ⇒ nothing happens on entry and every reading
+        // keeps its honest age until they ask for a check themselves.
         guard SettingsStore.shared.refreshOnEntry else { return }
         guard !entryRefreshing, !actionsDisabled else { return }
-        // #474: once per foreground session — see HealthCoordinator. Re-entering
-        // this tab used to open an SSH connection to every host again.
+        // Once per foreground session — see HealthCoordinator.
         guard health.claimServerPass() else { return }
+        // Round 2 (D): the same once-per-foreground gate refreshes the store's
+        // in-memory credential cache, so this pass re-reads the Keychain once
+        // per host and every later caller in the session is served from memory.
+        serverStore.invalidateSecrets()
         entryRefreshing = true
         defer { entryRefreshing = false }
-        let now = Date()
-        let due = serverStore.hosts.filter {
-            now.timeIntervalSince(lastProbe[$0.id] ?? .distantPast) >= Self.entryProbeStaleSeconds
-        }
+        // Throttled per host: a snapshot younger than
+        // `HostSnapshotPolicy.recheckSeconds` is shown as-is; only a pull or an
+        // explicit action re-reads it sooner.
+        let due = serverStore.hosts.filter { health.shouldRecheckHost($0.id, force: false) }
         for host in due {
             if Task.isCancelled { return }
             await silentProbe(host)
-            // boc #470: the card's own lazy first load may be landing right now,
-            // or may just have landed — one listing per host per entry, not two
-            // SSH logins racing for `carrierRows`. A pull (`refreshAllHosts`)
-            // is forced and does not skip.
+            // One listing per host per entry: the card's own lazy first load
+            // may be landing right now. A pull (`refreshAllHosts`) is forced.
             if carrierListInFlight.contains(host.id) { continue }
             if let at = carrierRowsAt[host.id],
                Date().timeIntervalSince(at) < Self.entryProbeStaleSeconds { continue }
-            // eoc #470
             await refreshCarriers(host.id)
         }
-        // Returns immediately: the coordinator serialises the probes, caps the
-        // pass and skips the room the live tunnel holds. Nodes it doesn't reach
-        // stay honestly "not checked" — each unchecked protocol row says so in
-        // its own chip (#459).
-        // #458 was: `verifyStale` — only never/stale nodes, capped at 6, so a
-        // protocol verified 10 minutes ago was left alone and the user still had
-        // to ask. `verifyDue` covers EVERY protocol on every server, uncapped,
-        // while `shouldProbe`'s 2-minute debounce keeps tab-switching from
-        // turning into a probe storm.
+        // Returns immediately: the coordinator serialises the probes and skips
+        // the room the live tunnel holds. Unreached nodes stay "not checked"
+        // in their own chip.
         health.verifyDue(serverStore.hosts.flatMap { hostRecords($0) }, using: tunnel)
     }
 
-    // boc #459: requirement 6 — refreshing a server is a swipe down, "same
-    // logic" as Connections, "its info too".
-    //
-    // The manual twin of `refreshOnEntry()`. Same three reads per host, but
-    // FORCED: no `entryProbeStaleSeconds` filter and no `SettingsStore
-    // .refreshOnEntry` guard. That is the contract the toggle now has on both
-    // tabs — the switch decides whether the app checks BY ITSELF; a pull always
-    // checks. `refreshOnEntry` above is untouched, guard and staleness filter
-    // included, so requirement 4 keeps working exactly as it did.
-    //
-    // What one pull re-reads, per host:
-    //   • TCP-22 reachability + its latency  → the PING stat and the
-    //     `unreachable` headline input (`doPing`, inside `silentProbe`)
-    //   • the readiness probe                → HostBase (the status pill) plus
-    //     disk / RAM / uptime and the read stamp
-    //   • the container scan                 → which protocols exist and whether
-    //     each one's process is up (`refreshCarriers`)
-    //   • then a forced end-to-end probe of every protocol on every host
-    //
-    // The system spinner is held for the whole SSH pass, so it means something
-    // (~2–6 s for one host); each card's pill, numbers and read stamp update in
-    // place as its probe returns; then every protocol chip flips to
-    // "Checking…" and resolves one at a time. `silentProbe` never lies on
-    // failure — a probe that throws leaves the base, the stats and `lastProbeOK`
-    // alone, so a failed pull AGES the read stamp instead of inventing a state.
+    /// Pull-to-refresh: the forced twin of `refreshOnEntry()` — no throttle and
+    /// no `refreshOnEntry` setting guard. Per host it re-reads TCP reachability
+    /// and latency, the readiness probe (base + disk/RAM/uptime) and the
+    /// container listing, then force-verifies every protocol. The system
+    /// spinner is held for the whole SSH pass. `silentProbe` never lies on
+    /// failure: a probe that throws leaves the base and the stats alone, so a
+    /// failed pull ages the read stamp instead of inventing a state.
     private func refreshAllHosts() async {
         // An SSH op already holds the lane and paints its own progress bar;
-        // queueing probes behind it would tell the user nothing new.
-        // #460 was: `guard !actionsDisabled, !entryRefreshing else { return }` — a
-        // pull that landed while the ON-ENTRY pass was still running returned
-        // instantly, so the system spinner snapped back and the gesture read as
-        // "nothing happened". This is the one tab where entering it starts a
-        // pass of its own, i.e. exactly when a user is most likely to pull. Ride
-        // the running pass out, then do the forced one they asked for: the entry
-        // pass is filtered (only hosts staler than `entryProbeStaleSeconds`, and
-        // only when `refreshOnEntry` is on), so it is not a substitute for it.
+        // queueing probes behind it would tell the user nothing new. A running
+        // entry pass is ridden out, then the forced pass the user asked for runs.
         guard !actionsDisabled else { return }
         while entryRefreshing {
             if Task.isCancelled { return }
@@ -1703,59 +1739,45 @@ struct ServersView: View {
         // Uncapped and forced, unlike the on-entry `verifyDue` — the user asked.
         health.verifyAll(serverStore.hosts.flatMap { hostRecords($0) }, using: tunnel)
     }
-    // eoc #459
 
-    /// #456: a readiness probe that NEVER lies. On success it sets the base, the
-    /// stats and the display clock; on ANY failure it leaves ALL THREE alone, so
-    /// the card keeps showing the last real reading WITH its true age and the
-    /// TCP-22 verdict `doPing` just recorded — a network or SSH error must never
-    /// be rendered as "stopped", nor as a fresh reading (requirements 2 and 3).
-    /// Status-silent (`probeReadiness`, not `checkReadiness`), so it neither
-    /// locks the card's buttons nor paints a progress bar — with ONE exception
-    /// since #461: on a host with no container on record, `adoptOrphanContainer`
-    /// runs `scanContainers`, which does publish `provisioner.status`, so the
-    /// cards lock for that one SSH call. Every other host stays silent.
+    /// A readiness probe that never lies. On success it sets the base, the
+    /// stats, the display clock and the persisted snapshot; on any failure it
+    /// leaves all of them alone, so the card keeps the last real reading with
+    /// its true age plus the TCP verdict `doPing` just recorded — a network or
+    /// SSH error is never rendered as "stopped". Status-silent, except that on
+    /// a host with no container on record `adoptOrphanContainer` runs a scan
+    /// that publishes `provisioner.status`.
     private func silentProbe(_ host: ServerHost) async {
         guard let secret = secret(for: host) else { return }
-        // #482: the first-reading path may adopt a container; own the same host
-        // lane as manual operations and renewal while it awaits SSH.
+        // The first-reading path may adopt a container; own the same host lane
+        // as manual operations while it awaits SSH.
         guard Provisioner.tryEnterHost(host.id) else { return }
         defer { Provisioner.leaveHost(host.id) }
+        probingHostIDs.insert(host.id)
+        defer { probingHostIDs.remove(host.id) }
         await doPing(host)                       // refreshes pingLatencies + lastPing
-        guard !Task.isCancelled else { return } // #482: cancelled membership pass.
+        guard !Task.isCancelled else { return }
         do {
             let (rstate, stats) = try await provisioner.probeReadiness(
                 on: host, secret: secret, containerName: host.lastContainerName)
-            guard !Task.isCancelled else { return } // #482: no orphan adoption after cancellation.
+            guard !Task.isCancelled else { return } // no orphan adoption after cancellation
             if let stats { vpsStats[host.id] = stats }
-            // #461: the pull adopts an orphaned container too — see
-            // `adoptOrphanContainer`. This is what makes the deleted **Check
-            // server** button a strict duplicate of one host's share of this
-            // pass rather than a loss. Resolved BEFORE the display write, so
-            // the base the card ends up showing is the adopted one.
+            // Adopt an orphaned container first, so the base the card shows is
+            // the adopted one.
             let base = await adoptOrphanContainer(host, secret: secret, base: HostBase(rstate))
             // Never clobber an op that started while we were awaiting the probe.
             if !(display[host.id]?.isRunning ?? false) {
                 display[host.id] = .base(base)
             }
-            lastProbeOK[host.id] = Date()       // #456 (audit): a REAL container reading
-            lastProbeError[host.id] = nil       // #469
+            lastProbeOK[host.id] = Date()       // a REAL container reading
+            lastProbeError[host.id] = nil
+            recordSnapshot(host, base: base)
         } catch {
             LogStore.shared.log(.provisioning, "⚠ auto-check failed: \(error.localizedDescription)")
-            lastProbeError[host.id] = error.localizedDescription   // #469: the card says WHY
-            // boc #456 (audit)
-            // #456 was: `pingLatencies[host.id] = nil` with the comment
-            // «"couldn't check", NOT "stopped"». `pingLatencies` is
-            // `[UUID: Double?]`, so assigning a bare `nil` REMOVES the key
-            // (Swift's dictionary-of-optionals trap) — the opposite of the
-            // intent. It (a) erased the honest TCP verdict `doPing` had just
-            // recorded one line above, including the `.some(nil)` that is the
-            // ONLY input producing `HostHeadline.unreachable`, so a VPS that was
-            // genuinely unreachable stopped saying so, and (b) left `reachable`
-            // as "never pinged". Nothing is written here now: `doPing` already
-            // recorded the truth, and `lastProbeOK` is deliberately NOT stamped
-            // so the card keeps saying how old the last REAL reading is.
-            // eoc #456 (audit)
+            lastProbeError[host.id] = error.localizedDescription   // the card says why
+            // Nothing else is written: `doPing` already recorded the TCP truth,
+            // and `lastProbeOK` is deliberately not stamped so the card keeps
+            // saying how old the last real reading is.
         }
         // Stamped on BOTH paths — the attempt clock (no hammering). The DISPLAY
         // clock is `lastProbeOK`, written only where a reading actually came back.
@@ -2361,47 +2383,32 @@ struct ServersView: View {
     }
 
     private func carrierMenuItems(_ host: ServerHost, row: SSHRunner.CarrierInfo) -> [OlcMenuItem] {
-        let rowState = rowHealth(host, row: row)   // #456
-        let suggested = rowState.suggestedAction   // #457
+        let rowState = rowHealth(host, row: row)
+        let suggested = rowState.suggestedAction
         var items: [OlcMenuItem] = []
-        // boc #463: FIRST on a telemost row, above even the verdict's own
-        // suggested fix. An expired room reports `roomInvalid`, whose suggested
-        // action is "Change room / transport" — a sheet that asks the owner to
-        // paste a room id they do not have yet, because getting one is the very
-        // errand this item performs. When both apply, the item that ends the
-        // errand outranks the item that restates it.
+        // A telemost row leads with "new room": an expired room's suggested fix
+        // is "Change room / transport", which asks for a room id the owner does
+        // not have yet — this item is the errand that produces one.
         if row.provider == "telemost" {
             items.append(.action(L10n.telemostNewRoomAction.localized(),
                                  systemImage: "arrow.triangle.2.circlepath") {
                 beginTelemostRenew(host, row: row)
             })
         }
-        // eoc #463
-        // boc #457: a verdict that names its own fix must OFFER that fix, and
-        // offer it first. `HealthReason.action` has always returned one
-        // (keyMismatch → Recover connection, roomInvalid → Change room) and it
-        // was never wired to anything — the row menu opened with actions that
-        // assume the protocol already works. Whichever item the verdict points
-        // at is hoisted to the top and skipped in its usual position below, so
-        // the menu never lists the same action twice.
-        // #470: …and so must a mismatch the app can see for free — the record's
-        // room is no longer the room the container serves (`roomDrifted`).
-        // Recover is the fix that ends it, so it leads, like a verdict's own fix.
+        // A verdict that names its own fix offers it first (and is skipped in
+        // its usual position below, so no action is listed twice). A record
+        // whose room drifted from the container's room gets Recover the same way.
         let drifted = Self.roomDrifted(connectionRecord(host, row: row), from: row)
-        // #470 was: if suggested == .recoverConnection { items.append(recoverItem(host, row: row)) }
         if suggested == .recoverConnection || drifted { items.append(recoverItem(host, row: row)) }
         if suggested == .checkRoom         { items.append(reconfigureItem(host, row: row)) }
-        // eoc #457
-        // #456: Verify comes next — the honest answer to "can I use this?" is one
-        // tap away, instead of buried under actions that assume it already works.
         items.append(.action(L10n.healthActionVerify.localized(), systemImage: "checkmark.shield") {
             verifyRow(host, row: row)
         })
-        items.append(.action(L10n.protocolConnectAction.localized(), systemImage: "personalhotspot") {
-            connectVia(host, row: row)
-        })
-        // #457 was: `row.status.shortLabel.hasPrefix("Up")` — string-matching a
-        // user-visible label. `ContainerStatus.parse` already decided this.
+        if !isLiveRow(row) {
+            items.append(.action(L10n.actionConnect.localized(), systemImage: "personalhotspot") {
+                connectVia(host, row: row)
+            })
+        }
         if Self.isUp(row.status) {
             // #468 was: `L10n.actionStop` — "Stop server". On a protocol row this
             // stops that protocol's container, and on a multi-protocol host the
@@ -2485,9 +2492,12 @@ struct ServersView: View {
         carrierListInFlight.insert(hostID)            // #470
         defer { carrierListInFlight.remove(hostID) }  // #470
         do {
-            carrierRows[hostID] = try await provisioner.listCarriers(
+            let rows = try await provisioner.listCarriers(
                 on: host, secret: secret, baseContainer: cname)
-            carrierRowsAt[hostID] = Date()            // #470: the rows' own read clock
+            let now = Date()
+            carrierRows[hostID]   = rows
+            carrierRowsAt[hostID] = now               // #470: the rows' own read clock
+            recordCarriers(rows, for: hostID, at: now) // round 2 (D): the next cold start draws these
         } catch {
             LogStore.shared.log(.provisioning,
                 "⚠ protocol list failed: \(error.localizedDescription)")
@@ -2500,6 +2510,7 @@ struct ServersView: View {
             // re-fetches them (`hostCard`'s lazy load keys on nil).
             carrierRows[hostID]   = nil
             carrierRowsAt[hostID] = nil
+            recordCarriers(nil, for: hostID, at: nil) // and the snapshot forgets them too
             // eoc #470
         }
     }
@@ -2667,7 +2678,7 @@ struct ServersView: View {
     /// label was stamped into a persisted name in whichever language was on at
     /// install time, and `ConnectionNaming.stripCarrierSuffix` recognises the
     /// id or the CURRENT label only — so a record installed in Russian kept
-    /// «zaza · Яндекс Телемост» under an English hero that already said
+    /// «ams-1 · Яндекс Телемост» under an English hero that already said
     /// "Yandex Telemost" above it. A persisted token stays locale-stable
     /// (AGENTS.md); the service's name is drawn at render time from the id.
     /// #470 was: multi ? "\(host.label) · \(CarrierTransportMatrix.carrierLabel(carrier))" : host.label
@@ -3328,6 +3339,7 @@ struct ServersView: View {
         // #457 was: `container.status.shortLabel.hasPrefix("Up")`
         let base: HostBase = Self.isUp(container.status) ? .running : .stopped
         display[host.id] = .base(base)
+        recordSnapshot(host, base: base)
         // #456: the scan IS a fresh SSH observation — both clocks.
         lastProbe[host.id]   = Date()
         lastProbeOK[host.id] = Date()   // #456 (audit)
@@ -3348,13 +3360,15 @@ struct AdvancedHostRoute: Hashable {
     let host: ServerHost
 }
 
-// #135: identifiable wrapper so the full-access share can drive a `.sheet(item:)`
-// the same way `shareConn` does. Carries the connection (for the URI-only top of
-// the sheet) plus the SSH payload that unlocks the destructive opt-in section.
-struct FullAccessShareRequest: Identifiable {
+/// Drives the card's share sheet: the host's protocol connections plus the
+/// optional full-access payload. `startWithFullAccess` opens straight onto the
+/// full-access confirmation (Manage screen entry).
+struct ServerShareRequest: Identifiable {
     let id = UUID()
-    let conn: ConnectionRecord
-    let payload: FullAccessShare
+    let hostLabel: String
+    let options: [ServerShareOption]
+    let fullAccess: FullAccessShare?
+    var startWithFullAccess = false
 }
 
 // boc #452: multi-carrier request payloads — value snapshots (the #330 rule)
@@ -3418,15 +3432,14 @@ struct TelemostRenewRequest: Identifiable {
 
 // #340: both appearance variants.
 #if DEBUG
-// #457 was: the previews passed `logsRouter: LogsRouter()`.
 #Preview("Servers — Dark") {
     ServersView(serverStore: ServerHostStore(), connections: ConnectionStore(),
-                botStore: BotStore(), tunnel: TunnelManager())
+                tunnel: TunnelManager())
         .preferredColorScheme(.dark)
 }
 #Preview("Servers — Light") {
     ServersView(serverStore: ServerHostStore(), connections: ConnectionStore(),
-                botStore: BotStore(), tunnel: TunnelManager())
+                tunnel: TunnelManager())
         .preferredColorScheme(.light)
 }
 #endif

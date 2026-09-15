@@ -520,12 +520,6 @@ final class ConnectionStore: ObservableObject {
         return (L10n.subMetaMultipleSources_fmt.formatted(sources.count), aggregate)
     }
 
-    /// Sorted unique group names already in use. Used by the connection
-    /// editor to suggest existing groups via a quick-pick menu.
-    var allGroupNames: [String] {
-        Array(Set(connections.map(\.groupName))).sorted()
-    }
-
     // MARK: Persistence
 
     private static let v2Key      = "olcrtc_records_v2"

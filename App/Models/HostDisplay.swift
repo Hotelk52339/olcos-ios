@@ -117,11 +117,28 @@ enum HostDisplay: Equatable {
 // MARK: - Reducer (pure — unit-tested in HostDisplayTests)
 
 extension HostBase {
-    /// Pre-probe seed for a never-probed host: a known container → `.stopped`
-    /// (offer Start, never a mistaken reinstall); otherwise `.unknown` ("tap
-    /// Check"). Never asserts `.running` without a probe.
-    static func seed(lastContainerName: String?) -> HostBase {
-        lastContainerName != nil ? .stopped : .unknown
+    /// Persisted snapshot ↔ display base (App/Models/NodeHealth.swift). A host
+    /// with no snapshot starts as `.unknown` — "checking", never "stopped".
+    init(snapshot: HostSnapshotBase) {
+        switch snapshot {
+        case .unknown:    self = .unknown
+        case .noPodman:   self = .noPodman
+        case .noImage:    self = .noImage
+        case .imageReady: self = .imageReady
+        case .stopped:    self = .stopped
+        case .running:    self = .running
+        }
+    }
+
+    var snapshotBase: HostSnapshotBase {
+        switch self {
+        case .unknown:    return .unknown
+        case .noPodman:   return .noPodman
+        case .noImage:    return .noImage
+        case .imageReady: return .imageReady
+        case .stopped:    return .stopped
+        case .running:    return .running
+        }
     }
 }
 
@@ -356,6 +373,37 @@ enum HostHeadline: Equatable {
             guard t > 0, let age else { return h.subtitle }
             return L10n.vpsHeadlineProtocolsVerified_fmt.formatted(v, t, HealthAge.phrase(age))
         // eoc #471
+        }
+    }
+}
+
+// MARK: - Protocol rows ⇄ persisted snapshot (round 2, D)
+//
+// The Servers tab keeps its protocol rows (`SSHRunner.CarrierInfo`) in view
+// state, which a cold start loses; the rows then appear only after the first
+// SSH listing. These two pure conversions let the rows ride along in
+// `HostSnapshot.carriers` (App/Models/NodeHealth.swift) so the first frame can
+// draw them from memory. Pinned by `HostSnapshotTests`.
+extension HostSnapshotCarrier {
+    init(_ info: SSHRunner.CarrierInfo) {
+        self.init(file: info.file, provider: info.provider, transport: info.transport,
+                  room: info.room, container: info.container,
+                  status: Self.rawStatus(info.status), isPrimary: info.isPrimary)
+    }
+
+    /// The row the Servers tab renders, status re-parsed from the raw text.
+    var carrierInfo: SSHRunner.CarrierInfo {
+        SSHRunner.CarrierInfo(file: file, provider: provider, transport: transport,
+                              room: room, container: container,
+                              status: ContainerStatus.parse(from: status), isPrimary: isPrimary)
+    }
+
+    /// Inverse of `ContainerStatus.parse(from:)`: the text podman printed, or
+    /// "" for a container that was not found.
+    static func rawStatus(_ status: ContainerStatus) -> String {
+        switch status {
+        case .running(let s), .stopped(let s): return s
+        case .notFound: return ""
         }
     }
 }

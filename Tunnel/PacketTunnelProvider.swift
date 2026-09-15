@@ -472,6 +472,9 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     // MARK: App messages ("stats" / "logs" from VPNController)
+    //
+    // "stats" is polled ~1/s by the app while it is connected and the main
+    // screen is visible (TunnelThroughputMonitor); it must stay cheap.
 
     override func handleAppMessage(_ messageData: Data,
                                    completionHandler: ((Data?) -> Void)?) {
@@ -490,12 +493,20 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    /// Runs on workQueue. JSON keys are consumed by VPNController.stats().
+    /// The "stats" message format version. Mirrors
+    /// `VPNController.ProviderStats.version`; bump both on incompatible change.
+    static let statsVersion = 1
+
+    /// Runs on workQueue. JSON keys are decoded by `VPNController.ProviderStats`
+    /// (app side); `TunnelThroughputMonitor` turns rx/tx deltas into the main
+    /// screen's throughput readout, so the counters must stay cumulative.
     private func statsJSON() -> Data? {
         var stats: [String: Any] = [
+            "v":            Self.statsVersion,
             "state":        runtime?.state() ?? "idle",
             "running":      runtime?.isRunning() ?? false,
             "tunnelActive": tunnel != nil,
+            "monotonicMs":  Int64(ProcessInfo.processInfo.systemUptime * 1000),
         ]
         if let tunnel {
             stats["rxBytes"] = tunnel.rxBytes()   // toward the device

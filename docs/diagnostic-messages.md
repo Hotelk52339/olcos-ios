@@ -79,8 +79,9 @@ line as a confirmed upstream bug.
   time; do not label a diagnostic “direct” merely because it bypasses local
   SOCKS while a system VPN still owns routes.
   [IPChecker](../App/Services/IPChecker.swift) · [SpeedTest](../App/Services/SpeedTest.swift).
-- The animated waveform is an active-only decoration, **not measured traffic,
-  an audio envelope or a speed graph**. It does not validate a connection.
+- The beam-and-firewall animation paces its particles from measured tunnel
+  throughput, but it is **not a speed graph and not a health verdict**: a
+  broken wall means the tunnel reported connected, nothing more.
   [SignalWaveform](../App/Views/SignalWaveform.swift).
 - This catalog publishes no throughput benchmark or carrier-availability
   guarantee. Reproduce performance observations with device, network,
@@ -88,7 +89,7 @@ line as a confirmed upstream bug.
 
 ## Share a useful, safe report
 
-Include version/build (`1.0 (1)` for this release), device/iOS, installation and
+Include version/build (`2.0 (2)` for this release), device/iOS, installation and
 signing method, selected/actual mode, RU/EN/FR language, carrier/transport,
 reproduction steps, expected/actual result and a narrow time window.
 For regressions, add last known good and first known bad builds, or “unknown.”

@@ -58,14 +58,21 @@ exist. [Framework inputs](../scripts/build-framework.sh) · [wrapper module](../
 
 ### Option B — fetch a matching released framework
 
-Only if the selected release actually contains `Mobile.xcframework.zip`:
+Only if the selected release actually contains `Mobile.xcframework.zip`,
+`framework-provenance.json` and `SHA256SUMS`:
 
 ```bash
-GH_REPO=Hotelk52339/olcos-ios ./scripts/fetch-framework.sh v1.0.1
+GH_REPO=Hotelk52339/olcos-ios ./scripts/fetch-framework.sh v2.0.2
 ```
 
-The script downloads through `gh` and replaces `App/Mobile.xcframework`.
-Authenticate with `gh auth login` if your environment requires it.
+The script needs `gh`, `unzip` and `python3`. It downloads the three assets
+through `gh`, verifies the archive against `SHA256SUMS`, and refuses a binary
+whose provenance `input_sha256` does not match the fingerprint of your
+checkout (the build scripts, shims, gomobile sources and the upstream
+submodule). Only then does it replace `App/Mobile.xcframework`. Run it
+without a tag to use the default from `scripts/cut-release.py --dry-run`;
+`./scripts/fetch-framework.sh --cache-key` prints the fingerprint used for
+CI caching. Authenticate with `gh auth login` if your environment requires it.
 If the release or asset is absent, build from source; do not assume every tag
 has a completed or validated release artifact. Inspect release provenance and
 match the binary to the source revision you intend to test.
@@ -81,8 +88,8 @@ open olcrtc-ios.xcodeproj
 
 `project.yml` is authoritative. Regenerate when it changes or source/resource
 membership changes; do not edit generated project/plist output as the fix.
-The retained schemes are `olcrtc-ios` and `olcrtc-ios-tests`, and the embedded
-extension target is `olcrtc-tunnel`. [Project specification](../project.yml).
+XcodeGen generates one scheme per target: use `olcrtc-ios` to run the app and
+`olcrtc-ios-tests` for tests; the embedded extension target is `olcrtc-tunnel`. [Project specification](../project.yml).
 
 For device installation, configure signing consistently for the app and
 extension, retaining the `<app bundle id>.tunnel` relationship and required
@@ -130,6 +137,13 @@ running iOS packet-tunnel provider or device entitlement behavior.
 
 Choose checks relevant to your diff; these are available commands rather than
 a claim that every platform can execute every check:
+
+**Foundation-only animation regressions on Linux:** with a Swift toolchain
+providing XCTest, run `bash scripts/test_firewall_model.sh` (or set `SWIFTC`
+to the compiler's absolute path). This compiles the pure firewall state model
+and executes its sequence, cancellation, intensity, haptic-policy and
+wall-geometry tests.
+It does **not** compile SwiftUI, render the hero or replace native Xcode tests.
 
 **Linux server checks:** run the following group on Linux (for example an
 Ubuntu runner, VM or container) with Python 3, Bash and GNU command-line tools.
@@ -183,9 +197,30 @@ check RU/EN/FR, accessibility and Reduce Motion. Physical haptics need a
 device; conceptual artwork is not a substitute for rendered UI evidence.
 [Localization](../App/Localization/L10n.swift) · [interaction policy](../App/Views/SignalWaveform.swift).
 
+### Localization and release tooling
+
+User-facing strings are keyed in `App/Localization/L10n.swift`, with EN/RU
+values in `L10nTable.swift` and FR values in `L10nFrench.swift`. Edit them
+with the lock-protected helper instead of by hand, and verify the three files
+stay aligned:
+
+```bash
+python3 scripts/dev/l10n.py add KEY --en "English" --ru "Русский" --fr "Français"
+python3 scripts/dev/l10n.py check
+```
+
+The release identity comes from `project.yml`; these read-only helpers print
+the planned tag and validate the pipeline without tagging or publishing:
+
+```bash
+python3 scripts/cut-release.py --dry-run
+python3 scripts/test_release_pipeline.py
+```
+
 ## Package an unsigned IPA
 
-After generating the project and obtaining the framework:
+After obtaining the framework (the script regenerates the Xcode project
+itself):
 
 ```bash
 ./scripts/package-ipa.sh
@@ -196,7 +231,7 @@ The output is `olcos-ios-unsigned.ipa`; the script checks that
 requires appropriate signing and is not equivalent to App Store distribution
 or verified VPN support. [Packaging script](../scripts/package-ipa.sh).
 
-The olcOS 1.0 release identity is version **1.0**, build **1**, tag **v1.0.1**.
+The olcOS 2.0 release identity is version **2.0**, build **2**, tag **v2.0.2**.
 The release owner coordinates versions and publication; do not tag, publish
 or change version counters as an incidental build step.
 

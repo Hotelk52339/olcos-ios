@@ -417,11 +417,37 @@ final class VPNController: ObservableObject {
     // MARK: Provider messages
 
     /// Provider stats via NETunnelProviderSession.sendProviderMessage
-    /// (answered by PacketTunnelProvider.handleAppMessage "stats" with a JSON
-    /// blob: state / running / tunnelActive / rxBytes / txBytes / uptime).
-    /// nil when no session exists or the provider is not running.
+    /// (answered by PacketTunnelProvider.handleAppMessage "stats" with the
+    /// JSON blob described by `ProviderStats`). nil when no session exists or
+    /// the provider is not running.
     func stats() async -> Data? {
         await sendProviderMessage("stats")
+    }
+
+    /// The "stats" provider message, version 1. Encoder: `PacketTunnelProvider
+    /// .statsJSON()`; consumer: `TunnelThroughputMonitor`. Bump `version` and
+    /// `v` together on any incompatible change — a payload whose `v` is not
+    /// recognised decodes to nil so the app never shows numbers it cannot read.
+    struct ProviderStats: Decodable, Equatable {
+        static let version = 1
+
+        let v: Int
+        let state: String?
+        let running: Bool?
+        let tunnelActive: Bool?
+        /// Cumulative bytes toward the device (tunstack rx) — only while a tunnel is up.
+        let rxBytes: Int64?
+        /// Cumulative bytes from the device (tunstack tx) — only while a tunnel is up.
+        let txBytes: Int64?
+        let uptimeSeconds: Int?
+        /// Provider monotonic clock (ms) at sampling time, for rate maths.
+        let monotonicMs: Int64?
+
+        static func decode(_ data: Data) -> ProviderStats? {
+            guard let stats = try? JSONDecoder().decode(ProviderStats.self, from: data),
+                  stats.v == version else { return nil }
+            return stats
+        }
     }
 
     /// Tail of the extension's in-process log ring buffer (UTF-8 text,

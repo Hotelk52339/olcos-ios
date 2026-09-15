@@ -6,12 +6,57 @@ Behavioral version/URL/log/URI tests also live in the native XCTest target.
 import json
 from pathlib import Path
 import re
+import hashlib
 import unittest
-
-from test_signal_settings_491 import declarations, digest, normalized_branding_source
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_ROW_BASELINE = 'e4842021fcf7a094a38f6eee6eb92d210f9f5424ea9162bfa3e8ba70cc301909'
+
+
+def masked(text):
+    # Preserve positions while hiding strings/comments from brace/declaration scans.
+    pattern = r'//[^\n]*|/\*[\s\S]*?\*/|"""[\s\S]*?"""|"(?:\\.|[^"\\])*"'
+    return re.sub(pattern, lambda m: re.sub(r'[^\n]', ' ', m.group()), text)
+
+
+def declarations(text):
+    clean = masked(text)
+    result = {}
+    pattern = r'(?m)^\s*(?:(?:private|fileprivate|public|internal|nonisolated|static|mutating)\s+)*(func|var)\s+(\w+)[^\n{]*'
+    for m in re.finditer(pattern, clean):
+        kind, name = m.group(1, 2)
+        start = m.start()
+        while start < m.end() and clean[start].isspace():
+            start += 1
+        brace = clean.find('{', m.end())
+        # Stored vars are not computed declarations; methods can have multiline signatures.
+        if brace < 0 or (kind == 'var' and '\n' in clean[m.end():brace]):
+            continue
+        depth = 1
+        end = brace + 1
+        while depth and end < len(clean):
+            depth += (clean[end] == '{') - (clean[end] == '}')
+            end += 1
+        if depth:
+            raise AssertionError(f'Unbalanced declaration {name}')
+        result[f'{kind} {name}'] = text[start:end]
+    return result
+
+
+def digest(text):
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def normalized_branding_source(filename, text):
+    # The olcOS rebrand permits ONE display literal in ONE declaration only.
+    # Keep the audited baseline hashes/allowlists; never normalize whole files
+    # or arbitrary strings, bindings, actions, or other version-row changes.
+    if filename == 'SettingsView':
+        row = declarations(text).get('var versionRow')
+        if row is not None:
+            canonical = row.replace('Text("olcOS")', 'Text("olcrtc-ios")', 1)
+            return text.replace(row, canonical, 1)
+    return text
 
 
 def source(relative):
@@ -19,10 +64,10 @@ def source(relative):
 
 
 class OlcosBrandingContracts(unittest.TestCase):
-    def test_release_resets_to_one_point_zero_build_one_without_identity_changes(self):
+    def test_release_identity_is_two_point_zero_build_two_without_identity_changes(self):
         project = source('project.yml')
-        self.assertEqual(re.findall(r'^\s*MARKETING_VERSION: "([^"]+)"', project, re.M), ['1.0'])
-        self.assertEqual(re.findall(r'^\s*CURRENT_PROJECT_VERSION: "([^"]+)"', project, re.M), ['1'])
+        self.assertEqual(re.findall(r'^\s*MARKETING_VERSION: "([^"]+)"', project, re.M), ['2.0'])
+        self.assertEqual(re.findall(r'^\s*CURRENT_PROJECT_VERSION: "([^"]+)"', project, re.M), ['2'])
         self.assertEqual(re.findall(r'^\s*CFBundleDisplayName: (.+)', project, re.M),
                          ['olcOS', 'olcOS Tunnel'])
         self.assertEqual(re.findall(r'^\s*PRODUCT_BUNDLE_IDENTIFIER: (.+)', project, re.M), [
@@ -64,7 +109,8 @@ class OlcosBrandingContracts(unittest.TestCase):
         allowed_old = {
             'uriErrorInvalidScheme': 'olcrtc://',
             'subInvalidLink': 'olcrtc-sub://host/path',
-            'botNamePlaceholder': 'olcrtc_server_bot'
+            'botNamePlaceholder': 'olcrtc_server_bot',
+            'importHint': 'olcrtc://',
         }
         for path in files:
             entries = re.findall(r'^\s*\.(\w+):\s*("(?:\\.|[^"\\])*")', source(path), re.M)

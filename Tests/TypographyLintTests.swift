@@ -87,12 +87,8 @@ final class TypographyLintTests: XCTestCase {
         // `.metricValue` ARE `Font.system(…, design: .monospaced)`.
         "Theme.swift": ["mono"],
 
-        // Room ID / Jitsi URL / WB-token entry fields. These are exactly the
-        // documented mono cases (addresses, URIs, room IDs) and they are
-        // EDITABLE fields, so they stay at body size; step 6's token is
-        // caption-sized. Every other raw font in both sheets was migrated.
-        "InstallOptionsView.swift": ["mono"],
-        "ReconfigureOptionsView.swift": ["mono"],
+        // Room ID / Jitsi URL / WB-token entry fields: editable identifiers
+        // (addresses, URIs, room IDs) stay monospaced at body size.
 
         // ── 2. Identifiers that stay monospaced ─────────────────────────────
         //

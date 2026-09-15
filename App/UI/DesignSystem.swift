@@ -236,7 +236,7 @@ struct OlcButton: View {
     // is an invitation, not evidence. `.primary` is a solid `accentFill`.
     private var background: AnyShapeStyle {
         switch role {
-        case .primary:   return AnyShapeStyle(Theme.Signal.actionFill) // #492: shared Signal action treatment.
+        case .primary:   return AnyShapeStyle(Theme.Signal.actionGradient)
         case .secondary: return AnyShapeStyle(Theme.Palette.fill)
         case .danger:    return AnyShapeStyle(Theme.Palette.redWeak)
         case .ghost:     return AnyShapeStyle(Color.clear)
@@ -244,9 +244,9 @@ struct OlcButton: View {
     }
     private var foreground: Color {
         switch role {
-        case .primary:           return Theme.Signal.onAction // #492: contrast on sage, not white.
-        case .secondary, .ghost: return Theme.Signal.stroke // #492: adaptive, readable Signal accent.
-        case .danger:            return Theme.Palette.red
+        case .primary:           return Theme.Signal.onAction
+        case .secondary, .ghost: return Theme.Signal.stroke
+        case .danger:            return Theme.Palette.destructive   // calm coral, not status red
         }
     }
     /// #457: only the FILLED-but-neutral role needs an edge. `.primary` and
@@ -647,17 +647,15 @@ struct OlcSegmented<Value: Hashable>: View {
                         // Let it wrap and grow; minHeight keeps the normal look
                         // at standard sizes.
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(active ? Theme.Palette.textPrimary : Theme.Palette.textSecondary)
+                        // The active segment sits on the accent plate, so its
+                        // label takes the plate's own foreground.
+                        .foregroundStyle(active ? Theme.Palette.onAccent : Theme.Palette.textSecondary)
                         .padding(.vertical, 2)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 32)
                         .background {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .fill(active ? Theme.Palette.segActive : Color.clear)
-                                // #457 was: a hardcoded `.black.opacity(0.3)`
-                                // authored for the dark #48484A fill. On the
-                                // white light-mode segment it is a smudge; on
-                                // the dark ground it is invisible. Tokenised.
                                 .shadow(color: active ? Theme.Palette.segActiveShadow : .clear,
                                         radius: 1, y: 1)
                         }
@@ -700,7 +698,13 @@ struct OlcChipPicker<Value: Hashable>: View {
     }
 
     var body: some View {
-        FlowLayout(spacing: 8, lineSpacing: 8) {
+        // Round 2 was: the bare FlowLayout inside a Form row. The row measured
+        // it with an unspecified width first (one-line height), then laid it out
+        // at the real width where it wrapped — and the second line was clipped
+        // ("Сервис": the third chip cut off). `fixedSize(vertical:)` makes the
+        // picker answer with its wrapped height for the proposed width, and the
+        // `maxWidth` frame gives FlowLayout the row's full width to wrap in.
+        FlowLayout(spacing: Theme.Metrics.s2, lineSpacing: Theme.Metrics.s2) {
             ForEach(options) { opt in
                 let active = opt.value == selection
                 // #457 was: `if opt.value != selection { Haptics.tap() }` — and
@@ -733,6 +737,8 @@ struct OlcChipPicker<Value: Hashable>: View {
                 .accessibilityHint(opt.disabled ? (opt.disabledReason ?? "") : "")
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     /// (audit) disabled = tertiary text; the *selected* chip keeps its normal
@@ -751,38 +757,92 @@ struct OlcChipPicker<Value: Hashable>: View {
 }
 
 /// Minimal flow layout: lays children left→right, wrapping to the next line when
-/// the proposed width runs out. Backs `OlcChipPicker`.
+/// the proposed width runs out. Backs `OlcChipPicker`. The wrapping arithmetic
+/// lives in `FlowLayoutMath` (pure, unit-tested) so both passes agree.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     var lineSpacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, widest: CGFloat = 0
-        for sub in subviews {
-            let size = sub.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > maxWidth {
-                x = 0; y += rowHeight + lineSpacing; rowHeight = 0
-            }
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-            widest = max(widest, x - spacing)
-        }
-        return CGSize(width: min(widest, maxWidth), height: y + rowHeight)
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        // Round 2 was: `proposal.width ?? .greatestFiniteMagnitude` — fine for
+        // nil, but an infinite/zero probe produced a one-line (or one-per-line)
+        // height that a Form row then cached. Only a finite positive proposal
+        // wraps; anything else answers with the natural single-line size.
+        let maxWidth = FlowLayoutMath.wrapWidth(proposal.width, widths: sizes.map(\.width), spacing: spacing)
+        return FlowLayoutMath.size(sizes: sizes, spacing: spacing, lineSpacing: lineSpacing, maxWidth: maxWidth)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
-        for sub in subviews {
-            let size = sub.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > bounds.width {
-                x = 0; y += rowHeight + lineSpacing; rowHeight = 0
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let maxWidth = FlowLayoutMath.wrapWidth(bounds.width, widths: sizes.map(\.width), spacing: spacing)
+        let rows = FlowLayoutMath.rows(widths: sizes.map(\.width), spacing: spacing, maxWidth: maxWidth)
+        var y: CGFloat = 0
+        for row in rows {
+            var x: CGFloat = 0
+            var rowHeight: CGFloat = 0
+            for index in row {
+                let size = sizes[index]
+                subviews[index].place(at: CGPoint(x: bounds.minX + x, y: bounds.minY + y),
+                                      anchor: .topLeading, proposal: ProposedViewSize(size))
+                x += size.width + spacing
+                rowHeight = max(rowHeight, size.height)
             }
-            sub.place(at: CGPoint(x: bounds.minX + x, y: bounds.minY + y),
-                      anchor: .topLeading, proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
+            y += rowHeight + lineSpacing
         }
+    }
+}
+
+/// The wrapping arithmetic behind `FlowLayout`, kept free of SwiftUI so it can
+/// be unit-tested with plain numbers (Tests/FlowLayoutMathTests.swift).
+enum FlowLayoutMath {
+    /// The width children wrap at. A finite, positive proposal is honoured;
+    /// nil / infinite / non-positive proposals mean "natural size", which for a
+    /// flow is every child on one line.
+    static func wrapWidth(_ proposed: CGFloat?, widths: [CGFloat], spacing: CGFloat) -> CGFloat {
+        if let proposed, proposed.isFinite, proposed > 0 { return proposed }
+        return singleLineWidth(widths: widths, spacing: spacing)
+    }
+
+    /// Sum of widths plus the gaps between them (0 for no children).
+    static func singleLineWidth(widths: [CGFloat], spacing: CGFloat) -> CGFloat {
+        guard !widths.isEmpty else { return 0 }
+        return widths.reduce(0, +) + spacing * CGFloat(widths.count - 1)
+    }
+
+    /// Child indices grouped into lines. A child always starts a new line when
+    /// it would overflow `maxWidth` — unless it is the first on its line, so a
+    /// child wider than the container still gets placed (never dropped).
+    static func rows(widths: [CGFloat], spacing: CGFloat, maxWidth: CGFloat) -> [[Int]] {
+        var rows: [[Int]] = []
+        var current: [Int] = []
+        var x: CGFloat = 0
+        for (index, width) in widths.enumerated() {
+            if !current.isEmpty, x + width > maxWidth {
+                rows.append(current)
+                current = []
+                x = 0
+            }
+            current.append(index)
+            x += width + spacing
+        }
+        if !current.isEmpty { rows.append(current) }
+        return rows
+    }
+
+    /// The flow's own size: the widest line (capped at `maxWidth` only when a
+    /// line actually fits inside it) by the stacked line heights.
+    static func size(sizes: [CGSize], spacing: CGFloat, lineSpacing: CGFloat, maxWidth: CGFloat) -> CGSize {
+        let lines = rows(widths: sizes.map(\.width), spacing: spacing, maxWidth: maxWidth)
+        var widest: CGFloat = 0
+        var height: CGFloat = 0
+        for (lineIndex, line) in lines.enumerated() {
+            let lineWidth = singleLineWidth(widths: line.map { sizes[$0].width }, spacing: spacing)
+            let lineHeight = line.map { sizes[$0].height }.max() ?? 0
+            widest = max(widest, lineWidth)
+            height += lineHeight + (lineIndex > 0 ? lineSpacing : 0)
+        }
+        return CGSize(width: widest, height: height)
     }
 }
 

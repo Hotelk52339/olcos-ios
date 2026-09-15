@@ -18,8 +18,8 @@ import XCTest
 // server every row printed the same word under its own name. A line identical on
 // every row carries no bits. `ConnectionNaming.host` is what a row prints, so
 // this asks the question in exactly the terms the row answers it — including the
-// carrier-suffix stripping, which is what makes "zaza · telemost" and
-// "zaza · jitsi" ONE host rather than two.
+// carrier-suffix stripping, which is what makes "ams-1 · telemost" and
+// "ams-1 · jitsi" ONE host rather than two.
 //
 // The language is locked to English and restored: `host` compares a name's tail
 // against the CURRENT localized carrier label, so the strip is language-sensitive
@@ -51,7 +51,7 @@ final class Design471ConnectTests: XCTestCase {
 
     func testEmptyAndSingleListsDoNotSpanMultipleHosts() {
         XCTAssertFalse(ConnectionNaming.spansMultipleHosts([]))
-        XCTAssertFalse(ConnectionNaming.spansMultipleHosts([record("zaza", carrier: "telemost")]))
+        XCTAssertFalse(ConnectionNaming.spansMultipleHosts([record("ams-1", carrier: "telemost")]))
     }
 
     /// The shape this product is built around: ONE server, several protocols.
@@ -59,14 +59,14 @@ final class Design471ConnectTests: XCTestCase {
     /// `host` strips that suffix back off — so all three rows are the same host
     /// and none of them should print it.
     func testSeveralProtocolsOnOneServerAreOneHost() {
-        let records = [record("zaza · telemost", carrier: "telemost"),
-                       record("zaza · jitsi", carrier: "jitsi"),
-                       record("zaza", carrier: "wbstream")]
+        let records = [record("ams-1 · telemost", carrier: "telemost"),
+                       record("ams-1 · jitsi", carrier: "jitsi"),
+                       record("ams-1", carrier: "wbstream")]
         XCTAssertFalse(ConnectionNaming.spansMultipleHosts(records))
     }
 
     func testTwoServersSpanMultipleHosts() {
-        let records = [record("zaza · telemost", carrier: "telemost"),
+        let records = [record("ams-1 · telemost", carrier: "telemost"),
                        record("prod · telemost", carrier: "telemost")]
         XCTAssertTrue(ConnectionNaming.spansMultipleHosts(records))
     }
@@ -74,8 +74,8 @@ final class Design471ConnectTests: XCTestCase {
     /// The disagreement can arrive anywhere in the list, including last — the
     /// loop short-circuits on the first one, and must not stop looking before it.
     func testADifferentHostAtTheEndIsStillFound() {
-        let records = [record("zaza · telemost", carrier: "telemost"),
-                       record("zaza · jitsi", carrier: "jitsi"),
+        let records = [record("ams-1 · telemost", carrier: "telemost"),
+                       record("ams-1 · jitsi", carrier: "jitsi"),
                        record("prod", carrier: "telemost")]
         XCTAssertTrue(ConnectionNaming.spansMultipleHosts(records))
     }

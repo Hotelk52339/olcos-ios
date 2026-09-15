@@ -2,37 +2,30 @@ import SwiftUI
 
 // MARK: - AddConnectionView
 //
-// Editor sheet for ConnectionRecord. Two visible modes:
+// Editor sheet for ConnectionRecord.
 //
 //  CREATE mode (existing == nil)
-//    – URI paste field at the top so the user can paste any supported
-//      proxy link (currently `olcrtc://...`; more protocols are coming).
-//      Hitting "Parse" autofills the parameter fields below.
-//    – Manual fields are always visible so the user can verify what was
-//      parsed or build a record from scratch.
+//    – Import first: Paste URI / Scan QR, plus a field for a typed or edited
+//      `olcrtc://` link. A parsed link fills the parameters below; a
+//      subscription link or list is handed to `onImport`.
+//    – The parameters stay visible so the user can check what was parsed or
+//      build a record by hand.
 //
 //  EDIT mode (existing != nil)
-//    – URI field is hidden. Editing means tweaking existing parameters,
-//      and a stale URI from the original server is confusing here.
+//    – No import section: editing means tweaking existing parameters.
 //
-// Today the form only knows how to render an olcrtc-shaped configuration
-// (carrier + transport pickers, room/key/clientID fields). When other
-// protocols (vless / xray / reality / rprx-vision / awg 2.0 / xhttp) come
-// online, this view branches on the user-chosen ProtocolType and swaps to
-// the appropriate protocol-specific editor. The URI parser is shared and
-// already protocol-agnostic at the call site.
+// Groups: a record's `groupName` comes from its subscription (`#name`) and is
+// preserved on edit; manual records go to the default group. There is no group
+// field — a hand-typed section label had no other use on the main screen.
 //
-// Implementation note: SwiftUI's TextEditor doesn't support a native
-// placeholder, so we overlay a Text view that disappears as the user
-// starts typing.
+// Today the form renders an olcrtc-shaped configuration (carrier + transport
+// pickers, room/key/clientID fields). Other protocols would branch on a
+// user-chosen protocol type and swap in their own editor.
 
 struct AddConnectionView: View {
     var existing: ConnectionRecord? = nil
-    /// Group names already used by other connections. The editor surfaces
-    /// them in a quick-pick menu next to the freeform Group field.
-    var existingGroups: [String] = []
-    /// #361: invoked when a pasted blob resolves to a subscription (an https URL
-    /// to fetch, or raw sub.md text) rather than a single connection. The host
+    /// Invoked when a pasted blob resolves to a subscription (an https URL to
+    /// fetch, or raw sub.md text) rather than a single connection. The host
     /// routes it through the confirm-then-import + dedup flow. A single olcrtc://
     /// link is handled in-place (fills the fields below), so it never calls this.
     var onImport: ((OlcrtcSubscription.ImportInput) -> Void)? = nil
@@ -45,7 +38,6 @@ struct AddConnectionView: View {
     @State private var showQRScan   = false
 
     @State private var name      = ""
-    @State private var groupName = L10n.groupDefault.localized()
     @State private var carrier   = "wbstream"
     // #284: default to the carrier's recommended transport (wbstream+datachannel
     // is now `.question`); keeps the initial pick consistent with the matrix and
@@ -78,7 +70,7 @@ struct AddConnectionView: View {
     // red chip outline + footer as the warning. Only NEW picks are prevented,
     // via the disabled chips below.
     private var isValid: Bool {
-        !name.isEmpty && !groupName.isEmpty && !carrier.isEmpty && !transport.isEmpty
+        !name.isEmpty && !carrier.isEmpty && !transport.isEmpty
             && !roomID.isEmpty && !key.isEmpty && !clientID.isEmpty
             && validationError == nil   // #470
     }
@@ -113,10 +105,6 @@ struct AddConnectionView: View {
         }
     }
 
-    private var currentCompatFails: Bool {
-        CarrierTransportMatrix.compat(carrier: carrier, transport: transport) == .fail
-    }
-
     /// (audit) compat footer under the transport picker — this editor had none
     /// (ported from InstallOptionsView.transportFooter, minus the server-side
     /// tuning note, which doesn't apply to a client-side record).
@@ -131,14 +119,45 @@ struct AddConnectionView: View {
         }
     }
 
+    /// Round 2: the verdict is drawn as a tinted `FormNote`, not a lone "★ …"
+    /// caption. Tone follows the matrix cell; "works" / "no data" stay neutral.
+    private var transportTone: OlcStatusTone? {
+        switch CarrierTransportMatrix.compat(carrier: carrier, transport: transport) {
+        case .recommended: return .ok
+        case .question:    return .warn
+        case .fail:        return .error
+        case .ok, .unknown: return nil
+        }
+    }
+
+    /// Room helper: only Telemost accepts a pasted invite link (collapsed to
+    /// the bare id by `TelemostRoomService.normalizedRoomInput` in `onChange`).
+    private var roomHelper: String? {
+        carrier == "telemost" ? L10n.roomIDLinkHint.localized() : nil
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 if isCreate {
                     uriSection
                 }
-                manualFields
+                parametersSection
+                roomSection
+                accessSection
+                if isVP8 {
+                    vp8Section
+                }
+                if isSEI {
+                    seiSection
+                }
+                // SOCKS auth (socksUser/socksPass) is configured globally in
+                // Settings, not per-connection.
             }
+            // Round 2: the same grouped-card chrome as Settings / Reconfigure —
+            // sentence-case section headers, card rows, one pinned primary action.
+            .signalFormChrome()
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(isCreate
                              ? L10n.newConnectionTitle.localized()
                              : L10n.editConnectionTitle.localized())
@@ -155,74 +174,80 @@ struct AddConnectionView: View {
         }
     }
 
-    // MARK: URI paste
+    // MARK: Import
 
-    // #258: Scan-QR / Paste-URI shortcuts. Both feed `parseURI()`, which fills the
-    // manual fields below (was an inline TextEditor paste box).
+    /// Paste / Scan first, then a field for a typed or edited link. Every path
+    /// feeds `applyParsed`, which fills the parameters below.
     private var uriSection: some View {
         Section {
-            HStack(spacing: Theme.Metrics.s2) {   // #471: B9 — 8 → s2
-                OlcButton(L10n.scanQRAction.localized(), systemImage: "qrcode.viewfinder",
-                          role: .secondary, fillWidth: true) {
-                    showQRScan = true
-                }
+            HStack(spacing: Theme.Metrics.s2) {
                 OlcButton(L10n.pasteURIAction.localized(), systemImage: "doc.on.clipboard",
                           role: .secondary, fillWidth: true) {
                     pasteAndImport(UIPasteboard.general.string ?? "")
                 }
-            }
-            .padding(.vertical, 4)
-
-            // #265: manual entry — type or paste-and-edit a URI here; auto-parses
-            // into the fields below (the redesign had left only Scan/Paste).
-            TextField("olcrtc://…", text: $uriText, axis: .vertical)
-                // #471: B9 — a URI is step 6, and `.footnote` is not a step on
-                // the scale. #471 was: .font(.system(.footnote, design: .monospaced))
-                .font(Theme.Typography.mono)
-                .lineLimit(1...3)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .onChange(of: uriText) { _, newValue in
-                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !trimmed.isEmpty, let cfg = try? OlcrtcURI.parse(trimmed) else { return }
-                    applyParsed(cfg)   // #414: shared Parsed→fields mapping
-                    parseError = ""
+                OlcButton(L10n.scanQRAction.localized(), systemImage: "qrcode.viewfinder",
+                          role: .secondary, fillWidth: true) {
+                    showQRScan = true
                 }
+            }
+            .padding(.vertical, Theme.Metrics.s1)
+            .listRowSeparator(.hidden)
 
-            if !parseError.isEmpty {
-                // #471: B9 — step 5 through its token. was: .font(.caption)
-                Text(parseError).font(Theme.Typography.caption).foregroundStyle(Theme.Palette.red) // #317 was: .foregroundStyle(.red) — status colors via Theme.Palette (#258 invariant)
+            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
+                // The URI scheme is a wire-format literal, not copy.
+                TextField("olcrtc://…", text: $uriText, axis: .vertical)
+                    .font(Theme.Typography.metricValue)
+                    .foregroundStyle(Theme.Palette.textPrimary)
+                    .lineLimit(1...3)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
+                    .padding(.horizontal, Theme.Metrics.s3)
+                    .padding(.vertical, Theme.Metrics.s2)
+                    .frame(maxWidth: .infinity, minHeight: Theme.Metrics.controlHeight)
+                    .background(Theme.Palette.fill, in: fieldShape)
+                    .overlay { fieldShape.strokeBorder(Theme.Palette.fillBorder, lineWidth: 1) }
+                    .onChange(of: uriText) { _, newValue in
+                        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty, let cfg = try? OlcrtcURI.parse(trimmed) else { return }
+                        applyParsed(cfg)
+                        parseError = ""
+                    }
+                if !parseError.isEmpty {
+                    Text(parseError)
+                        .font(Theme.Typography.caption)
+                        .foregroundStyle(Theme.Palette.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         } header: {
-            Text(L10n.importByURI.localized())
+            SignalSectionHeader(L10n.importByURI.localized(), systemImage: "link")
         } footer: {
-            // #471: B9 — a Form footer already renders at the right step; the
-            // `.caption2` only pushed it BELOW the scale.
-            // #471 was: Text(L10n.importHint.localized()).font(.caption2)
             Text(L10n.importHint.localized())
         }
+        .signalFormRows()
     }
 
-    // MARK: Manual fields
+    private var fieldShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Theme.Metrics.controlRadius, style: .continuous)
+    }
 
-    @ViewBuilder private var manualFields: some View {
-        Section(L10n.parametersHeader.localized()) {
-            FormField(label: L10n.nameSettingLabel.localized(), placeholder: L10n.namePlaceholder.localized(), text: $name)
+    // MARK: Parameters — name, service, transport
 
-            groupField
+    private var parametersSection: some View {
+        Section {
+            FormField(label: L10n.nameSettingLabel.localized(),
+                      placeholder: L10n.namePlaceholder.localized(), text: $name)
 
-            // #258: carrier / transport via OlcChipPicker (was Picker). The
-            // per-transport compatibility symbols live in the Manage VPS matrix.
-            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {   // #471: B9 — 6 → s2
+            // Only a USER carrier pick runs through this Binding's setter.
+            // applyParsed / prefill write the @State directly (carrier +
+            // transport together), so an imported link or an edited record
+            // keeps its exact combo. When the user's new carrier makes the
+            // current transport a ✗ combo, transport snaps to the carrier's default.
+            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
                 Text(L10n.sectionCarrier.localized())
-                    .font(Theme.Typography.caption).foregroundStyle(.secondary)   // #471 was: .font(.caption)
-                // (audit) guarded transport reset: only a USER carrier pick runs
-                // through this Binding's setter. applyParsed / prefill write the
-                // @State directly (carrier + transport together), so an imported
-                // olcrtc:// URI or an edited record keeps its exact combo — the
-                // reset can never fire on those paths. When the user's new
-                // carrier makes the current transport a ✗ combo, transport snaps
-                // to the carrier's default (matching Install/Reconfigure).
+                    .font(Theme.Typography.caption)
+                    .foregroundStyle(Theme.Palette.textSecondary)
                 OlcChipPicker(selection: Binding(
                     get: { carrier },
                     set: { newCarrier in
@@ -234,51 +259,74 @@ struct AddConnectionView: View {
                     }
                 ), options: CarrierTransportMatrix.carriers.map { ($0, CarrierTransportMatrix.carrierLabel($0)) })
             }
-            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {   // #471: B9 — 6 → s2
-                Text(L10n.labelTransport.localized())
-                    .font(Theme.Typography.caption).foregroundStyle(.secondary)   // #471 was: .font(.caption)
-                // (audit) ✗ combos are disabled for NEW picks; an existing /
-                // imported record already holding one stays selected + savable
-                // (red chip outline + the red footer below carry the warning).
-                OlcChipPicker(selection: $transport, options: transportOptions)
-                Text(transportFooter)
-                    // #471: B9 — `.caption2` is the seventh step Theme abolished.
-                    .font(Theme.Typography.caption)
-                    .foregroundStyle(currentCompatFails ? Theme.Palette.red
-                                                        : Theme.Palette.textSecondary)
-            }
+            .padding(.vertical, Theme.Metrics.s1)
 
-            // (audit) was: hardcoded English labels "Room ID" / "Client ID" /
-            // "Key (hex)" in an otherwise localized sheet.
-            FormField(label: L10n.fieldRoomID.localized(), placeholder: L10n.roomIDLabel.localized(), text: $roomID)
+            // ✗ combos are disabled for NEW picks; an existing / imported record
+            // already holding one stays selected + savable (red chip outline +
+            // the red note below carry the warning).
+            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
+                Text(L10n.labelTransport.localized())
+                    .font(Theme.Typography.caption)
+                    .foregroundStyle(Theme.Palette.textSecondary)
+                OlcChipPicker(selection: $transport, options: transportOptions)
+                FormNote(text: transportFooter, tone: transportTone)
+            }
+            .padding(.vertical, Theme.Metrics.s1)
+        } header: {
+            SignalSectionHeader(L10n.parametersHeader.localized())
+        }
+        .signalFormRows()
+    }
+
+    // MARK: Room
+
+    private var roomSection: some View {
+        Section {
+            FormField(label: L10n.fieldRoomID.localized(),
+                      placeholder: L10n.roomIDPlaceholder.localized(),
+                      text: $roomID, mono: true, helper: roomHelper)
                 .onChange(of: roomID) { _, new in
-                    let stripped = new.filter { !$0.isWhitespace }
+                    // A pasted Telemost invite link collapses to the bare id
+                    // the server was installed with; other carriers only lose
+                    // whitespace. The room STRING must match the server's
+                    // byte for byte (see TelemostRoomService.normalizedRoomInput).
+                    let stripped = carrier == "telemost"
+                        ? TelemostRoomService.normalizedRoomInput(new)
+                        : new.filter { !$0.isWhitespace }
                     if stripped != new { roomID = stripped }
                 }
-            roomSuggestion()   // #456: stop asking for a room the app already knows
-            FormField(label: L10n.clientIDLabel.localized(), placeholder: "default", text: $clientID)
-            Text(L10n.clientIDFooter.localized())
-                .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
-                .foregroundStyle(.secondary)
-            FormField(label: L10n.keyHexLabel.localized(), placeholder: L10n.keyPlaceholder.localized(), text: $key, secure: true)
-            // boc #470: the sentence Connect would have shown, shown here instead.
-            if let why = validationError {
-                Text(why)
-                    .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
-                    .foregroundStyle(Theme.Palette.red)
-            }
-            // eoc #470
+            roomSuggestion()
+        } header: {
+            SignalSectionHeader(L10n.roomIDSectionHeader.localized())
         }
+        .signalFormRows()
+    }
 
-        if isVP8 {
-            vp8Section
+    // MARK: Access — client id + key
+
+    private var accessSection: some View {
+        Section {
+            FormField(label: L10n.clientIDLabel.localized(), placeholder: "default",
+                      text: $clientID, helper: L10n.clientIDFooter.localized())
+            FormField(label: L10n.keyHexLabel.localized(),
+                      placeholder: L10n.keyPlaceholder.localized(),
+                      text: $key, secure: true, mono: true)
+                .onChange(of: key) { _, new in
+                    // A key copied from a terminal or chat arrives with a
+                    // trailing newline or grouping spaces; the engine wants 64
+                    // bare hex digits. Case is left alone (hex is case-free).
+                    let stripped = new.filter { !$0.isWhitespace }
+                    if stripped != new { key = stripped }
+                }
+            // The sentence Connect would have shown, shown here instead.
+            if let why = validationError {
+                FormNote(text: why, tone: .error)
+                    .listRowSeparator(.hidden)
+            }
+        } header: {
+            SignalSectionHeader(L10n.formAccessSectionHeader.localized())
         }
-        // #365: sei tuning, mirroring the vp8 section but shown only for seichannel.
-        if isSEI {
-            seiSection
-        }
-        // SOCKS auth (socksUser/socksPass) is configured globally in Settings,
-        // not per-connection — removed from here to avoid confusion.
+        .signalFormRows()
     }
 
     /// #456: one tappable row offering the last room used with THIS carrier, so a
@@ -295,35 +343,11 @@ struct AddConnectionView: View {
             } label: {
                 Text(L10n.roomIDLastUsed_fmt.formatted(last))
                     .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption)
-                    .foregroundStyle(Theme.Palette.accent)
+                    .foregroundStyle(Theme.Signal.stroke)   // round 2: same action tint as Reconfigure
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
             .buttonStyle(.plain)
-        }
-    }
-
-    /// Group: freeform TextField + Menu of existing groups. Tap the menu
-    /// icon to fill the field from the existing set (avoids typos like
-    /// "Russia" vs "russia" splitting the same logical group), or just
-    /// type a new name to create a new group implicitly.
-    private var groupField: some View {
-        HStack {
-            Text(L10n.groupField.localized())
-            TextField(L10n.groupDefault.localized(), text: $groupName)
-                .multilineTextAlignment(.trailing)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.sentences)
-            if !existingGroups.isEmpty {
-                Menu {
-                    ForEach(existingGroups, id: \.self) { g in
-                        Button(g) { groupName = g }
-                    }
-                } label: {
-                    Image(systemName: "list.bullet.circle")
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
     }
 
@@ -368,11 +392,12 @@ struct AddConnectionView: View {
                 }
             }
         } header: {
-            Text(L10n.vp8ParamsHeader.localized())
+            SignalSectionHeader(L10n.vp8ParamsHeader.localized())
         } footer: {
             // #471: B9 — a Form footer is already a caption. was: .font(.caption2)
             Text(L10n.overrideHint.localized())
         }
+        .signalFormRows()
     }
 
     // MARK: SEI per-connection params (#365)
@@ -391,11 +416,12 @@ struct AddConnectionView: View {
             seiRow(L10n.seiFragLabel.localized(),  value: $seiFrag,  range: 100...60000, step: 100)
             seiRow(L10n.seiAckLabel.localized(),   value: $seiACK,   range: 0...10000, step: 1)
         } header: {
-            Text(L10n.seiParamsHeader.localized())
+            SignalSectionHeader(L10n.seiParamsHeader.localized())
         } footer: {
             // #471: B9 — a Form footer is already a caption. was: .font(.caption2)
             Text(L10n.seiParamsHint.localized())
         }
+        .signalFormRows()
     }
 
     private func seiRow(_ label: String, value: Binding<Int>,
@@ -506,16 +532,12 @@ struct AddConnectionView: View {
             params.roomCreatedAt = prior.roomID == roomID ? prior.roomCreatedAt : nil
         }
         // eoc #469
-        let trimmedGroup = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
-        // #283: store the canonical default token when the user left the group at
-        // the (localised) default or empty, so it localises at display time
-        // instead of freezing the language it was created in.
-        let resolvedGroup = (trimmedGroup.isEmpty || trimmedGroup == L10n.groupDefault.localized())
-            ? ConnectionRecord.defaultGroupName : trimmedGroup
+        // The group is subscription-derived (`#name`) or the default; editing
+        // never moves a record between groups.
         var record = ConnectionRecord(
             id:        existing?.id ?? UUID(),
             name:      name,
-            groupName: resolvedGroup,
+            groupName: existing?.groupName ?? ConnectionRecord.defaultGroupName,
             details:   .olcrtc(params)
         )
         // #469: keep the subscription provenance (see above) — `diffSubscription`
@@ -541,7 +563,7 @@ struct AddConnectionView: View {
     private func prefill() {
         guard let r = existing else {
             // Create mode: reset all fields to defaults
-            name = ""; groupName = L10n.groupDefault.localized()
+            name = ""
             carrier = "wbstream"; transport = CarrierTransportMatrix.defaultTransport(for: "wbstream")
             roomID = ""; key = ""; clientID = "default"
             socksUser = ""; socksPass = ""; vp8FPS = nil; vp8BatchSize = nil
@@ -550,9 +572,6 @@ struct AddConnectionView: View {
             return
         }
         name      = r.name
-        // #283: show the localised default ("Основная") in the edit field, not the
-        // raw "Servers" token; `save()` maps it back to the canonical token.
-        groupName = ConnectionRecord.displayGroupName(r.groupName)
         if case .olcrtc(let p) = r.details {
             carrier      = p.carrier
             transport    = p.transport

@@ -83,8 +83,10 @@ The scheme is an iOS-client convention; the list format is documented by
 
 The app fetches via HTTPS and shows an import confirmation. `#name` becomes a
 group, and entries use `##name` with fallback naming; unknown fields are ignored.
-HTTP subscription sources are not supported, and the fetcher implements a
-DoH fallback while preserving TLS host validation.
+The import sheet also accepts a plain `https://` subscription URL and a pasted
+sub.md body (lines of `olcrtc://` links with `#`/`##` marker lines) without
+fetching. Plain `http://` subscription sources are rejected, and the fetcher
+implements a DoH fallback while preserving TLS host validation.
 [Subscription model](../App/Models/OlcrtcSubscription.swift) ·
 [fetcher](../App/Services/SubscriptionFetcher.swift).
 

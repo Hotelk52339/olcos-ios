@@ -128,21 +128,28 @@ struct MainTabView: View {
             connections: store, tunnel: tunnel, hosts: serverStore))
     }
 
+    /// Records some saved server produced (primary + sibling carriers).
+    private var linkedRecordIDs: Set<UUID> {
+        var ids = Set<UUID>()
+        for host in serverStore.hosts {
+            if let id = host.lastConnectionID { ids.insert(id) }
+            ids.formUnion(host.extraConnectionIDs ?? [])
+        }
+        return ids
+    }
+
     var body: some View {
         // #457: three tabs — Connect / Servers / Settings. Everything else is a
         // pushed destination, entered FROM its subject.
         TabView(selection: $selectedTab) {
             ConnectionsView(store: store, tunnel: tunnel,
                             ipCheck: ipCheck, speed: speed,
-                            onPasteImport: handlePastedImport)   // #361
+                            onPasteImport: handlePastedImport,   // #361
+                            linkedRecordIDs: linkedRecordIDs)
                 .tabItem { Label(L10n.tabConnections.localized(), systemImage: "network") }
                 .tag(0)
 
-            // #452: + tunnel, so a protocol row on the host card can connect directly.
-            // #457 was: + logsRouter — "Container logs" pushes
-            // LogsView(subject: .container(host)) now.
-            ServersView(serverStore: serverStore, connections: store,
-                        botStore: botStore, tunnel: tunnel)
+            ServersView(serverStore: serverStore, connections: store, tunnel: tunnel)
                 .tabItem { Label(L10n.tabServers.localized(), systemImage: "server.rack") }
                 .tag(1)
 
@@ -551,14 +558,16 @@ struct MainTabView: View {
         switch ServerHostStore.resolveImport(candidate, into: serverStore.hosts) {
         case .updateExisting(let existing):
             var linked = existing
-            linked.lastConnectionID = connID   // #469: the card must know its own connection
-            serverStore.update(linked, password: fa.sshPassword)
+            linked.lastConnectionID = connID
+            linked.authMethod = fa.isKeyAuth ? .privateKey : .password
+            serverStore.update(linked, secret: fa.secret)
             LogStore.shared.log(.connection,
                 "⬇ full-access import: refreshed VPS \(existing.label) (\(existing.username)@\(existing.host):\(existing.port))")
         case .addNew(let host):
             var linked = host
-            linked.lastConnectionID = connID   // #469
-            serverStore.add(linked, password: fa.sshPassword)
+            linked.lastConnectionID = connID
+            linked.authMethod = fa.isKeyAuth ? .privateKey : .password
+            serverStore.add(linked, secret: fa.secret)
             LogStore.shared.log(.connection,
                 "⬇ imported full-access: connection + VPS \(host.label) (\(host.username)@\(host.host):\(host.port))")
         }

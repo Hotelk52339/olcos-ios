@@ -1,83 +1,36 @@
 import SwiftUI
 
-// MARK: - DiagnosticsCard (#454 / #258, merged #459)
+// MARK: - DiagnosticsCard
 //
-// FILE NOTE (#459): this file is still called HealthCard.swift because renaming
-// it needs an `xcodegen generate` pass, which cannot run on this machine. Its
-// contents are the Diagnostics card; rename the file to DiagnosticsCard.swift on
-// the next regeneration (`sources: - path: App` is a directory glob, so no
-// project.yml edit is involved).
+// FILE NOTE: this file is still called HealthCard.swift because renaming it
+// needs an `xcodegen generate` pass. Its contents are the Diagnostics card;
+// rename the file on the next regeneration.
 //
-// #459: ONE card, because there were two and they said the same things.
-//
-// #459 was: `HealthCard` ("Connection health": protocol / exit / latency /
-// throughput, only while a session was up) sat directly above `Diagnostics` (IP
-// check / speed test / carrier endpoints) — and the two overlapped on the two
-// facts the user actually reads. Latency was measured twice: a live 8 s probe in
-// the health card and a `SpeedResult.pingMs` figure in the speed row, which
-// carried no timestamp at all and could be inherited from a previous session or
-// a DIRECT-mode run. Two cards, two ping numbers, one screen. The owner's
-// verdict — "maybe KEEP Diagnostics and REMOVE Health, everything should be
-// logical" — is exactly right, so Diagnostics is the name that survives and the
-// health card's four facts move in as its first block.
-//
-// The card is two blocks:
+// ONE card, two blocks, last on the main screen:
 //   A. "This session" — what is true about the tunnel that is up RIGHT NOW.
-//      Mounted only while connected. Protocol (the ONE place this screen states
-//      the carrier/transport), exit, live response time.
+//      Mounted only while connected: exit IP and live latency. The hero above
+//      already names the service, transport, host and mode, so none of that is
+//      repeated here.
 //   B. "Checks" — the two things the user can RUN: IP check and speed test.
 //      Always present, because they are the only entry points to
-//      `IPChecker.checkAll` and `SpeedTest.run`. #461 was: a third row for the
-//      #328 carrier exclusions, now an item in the connected record's menu.
+//      `IPChecker.checkAll` and `SpeedTest.run`.
 //
-// #461: block A's third fact is called "Latency" again, because there is only
-// one latency in the app now. #460 had renamed it "Response time" and added a
-// paragraph explaining why it read ~8x the per-connection chips: this card timed
-// a whole request INCLUDING opening the connection, the chips timed a round-trip
-// on a connection already open. `LatencyProbe` (SpeedTest.swift) collapses the
-// two methods into one, and `publishLiveLatency` makes the live node's chip
-// print this card's own sample. The explanation is deleted with the discrepancy
-// it explained. Full reasoning on `responseRow`.
-//
-// #460: every fact in block A now also says WHERE IT COMES FROM, not just when
-// it was taken. Dating a claim answers "is this still true?"; sourcing it
-// answers "who says so?" — the owner asked the second question out loud about
-// the exit country, and it applies to every number here. Block B's third row
-// gained the same treatment for a different reason (finding 23): it named a
-// mechanism nobody outside the project recognises, so it now names the
-// SITUATION it applies to instead.
-//
-// NOTHING IS DRAWN THAT CANNOT BE DATED (#457, kept verbatim). Every value
-// carries the age of the measurement behind it, in the same `HealthAge`
-// vocabulary the row verdicts use, so a number from four minutes ago can never
-// read as "now".
-//
-// #457's "measuring… forever" fix is kept too: `SpeedTest.quickPing` returns nil
-// on ANY error, so the state machine is explicit — `probing` (a measurement is
-// in flight now) vs `latencyAt` (when one last completed). "Checking…" is
-// reachable only while `probing` is true AND nothing has completed yet.
+// NOTHING IS DRAWN THAT CANNOT BE DATED. Every value carries the age of the
+// measurement behind it, in the same `HealthAge` vocabulary the row verdicts
+// use, and says where it comes from, so a number from four minutes ago can
+// never read as "now". `SpeedTest.quickPing` returns nil on ANY error, so the
+// state machine is explicit — `probing` (a measurement is in flight now) vs
+// `latencyAt` (when one last completed); "Checking…" is reachable only while
+// `probing` is true AND nothing has completed yet.
 //
 // Throughput stays deliberately hard to claim: `SpeedResult` carries no
 // timestamp, so a `lastResult` inherited from an earlier session — or from a
 // DIRECT-mode test — is not evidence about the tunnel that is up now. The speed
-// row dates only a run this view watched finish.
+// row dates only a run this view watched finish. (The hero's live throughput
+// readout is a different thing: measured bytes/s, see `TunnelThroughputMonitor`.)
 //
-// #459 was also: `HealthCard.refreshButton` (an `arrow.clockwise` glyph). The
-// list now pulls to refresh, screen-wide; a per-card refresh glyph beside a
-// screen-wide gesture is two controls for one job.
-//
-// #471: THE CARD STOPS EXPLAINING ITSELF. Three things went, and each was a
-// second copy of something still on screen: the Protocol row (the hero names the
-// carrier and the transport), the exit row's `note:` paragraph (its one clause
-// now rides the age line) and the permanent IP-source hint (the Run button's
-// accessibility hint). The exit VALUE is the IP alone — the place belongs to the
-// hero, which prints it with a flag one card up. Both block headers draw
-// `OlcSectionHeader`, the design system's one section-header treatment, instead
-// of a local look-alike.
-//
-// It stays SEPARATE view structs (not inlined into ConnectionsView.body) so that
-// file's already-large body stays under the SwiftUI type-checker budget, and so
-// each `body` here is under ~25 lines.
+// Separate view structs (not inlined into ConnectionsView.body) so that file's
+// body stays under the SwiftUI type-checker budget.
 
 struct DiagnosticsCard: View {
     /// The live record (`TunnelManager.connectedRecord`) — the subject of block A.
@@ -86,15 +39,12 @@ struct DiagnosticsCard: View {
     @ObservedObject var speed: SpeedTest
     /// Route for the live probes — `.tunnel` while connected in proxy mode.
     let mode: RouteMode
-    /// #337: screenshot-safe IP masking (mirrors the IP-check rows).
+    /// Screenshot-safe IP masking (mirrors the IP-check rows).
     let maskIPs: Bool
     /// Block A exists only while a session is up; block B always does.
     let isConnected: Bool
-    // #461 was: also `carrierParams: OlcrtcConnection?` and
-    // `onCarrierEndpoints: (OlcrtcConnection) -> Void`, for the tools block's
-    // third row. That row is an action on a CONNECTION and moved into the
-    // connected record's overflow menu (`ConnectionsView.carrierEndpointsItem`);
-    // dropping the inputs is what makes it a move rather than a duplication.
+    // The carrier-endpoints tool is an action on a CONNECTION and lives in the
+    // connected record's overflow menu (`ConnectionsView`).
     let onSpeedTest: () -> Void
 
     var body: some View {
@@ -151,26 +101,21 @@ private struct DiagnosticsFacts: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // #471: the design system's ONE section-header treatment.
             // #471 was: DiagnosticsSubheader(title:) — a local uppercase label,
             // one of five hand-rolled recipes on two screens.
             OlcSectionHeader(L10n.diagSessionHeader.localized())
                 .padding(.top, Theme.Metrics.s3)
-            // #471 was: `protocolRow` — see the deleted helper below.
             exitRow
-            responseRow    // #460 was: latencyRow; #461: called "Latency" again
+            responseRow
         }
         // Live response time: measure now, then every ~8 s. Keyed on the live record so
         // a failover (record swap, #453) restarts the loop against the new
         // protocol; the conditional mount cancels it on disconnect. The 8 s tick
         // is also what re-renders every age in this block.
-        // #484 was: keyed only by record; proxy->VPN must restart even for one record.
         .task(id: "\(record?.id.uuidString ?? ""):\(mode.rawValue)") { await runLatencyLoop() }
-        // #457: `ExitGeo` is Equatable, so this catches BOTH refresh paths — the
         // pull gesture and ConnectionsView's connect-transition fetch. Deliberately
         // NOT `initial: true`: a value already in the store was measured at some
         // unknown earlier moment, and stamping it on mount would date it "now".
-        // #470 was: `.onChange(of: ipCheck.exitGeo)` stamping Date() here — a
         // refresh that returned the same geo never fired it, so a fresh reading
         // kept its old age. The checker dates each measurement (`exitGeoAt`).
         .onChange(of: ipCheck.exitGeoAt) { _, new in
@@ -181,17 +126,14 @@ private struct DiagnosticsFacts: View {
     // MARK: The latency loop
 
     private func runLatencyLoop() async {
-        // #457: a new live record has been measured zero times — clear the value
         // AND its stamp, so the previous node's number is never shown as this
         // one's after a #453 failover swap.
         latencyMs = nil
         latencyAt = nil
-        // #461: captured once. The task is keyed on `record?.id`, so a failover
         // swap restarts the loop and this can never publish under the wrong node.
         let liveID = record?.id
         while !Task.isCancelled {
             // boc #461
-            // #461: stand aside while a USER speed test is running. `SpeedTest
             // .run` reserves 180 s of keep-alive suppression up front precisely
             // because extra connections mid-test add congestion; this loop was
             // the one prober that ignored that. Probing a saturated tunnel
@@ -219,12 +161,11 @@ private struct DiagnosticsFacts: View {
             // SOCKS greeting cannot be bypassed: no answer is a failed sample,
             // never a direct one. `.direct` mode has no listener to ask.
             var listens = true
-            if mode.usesSOCKS { // #484: system VPN has no in-app SOCKS listener.
+            if mode.usesSOCKS {
                 listens = await TunnelManager.socksListenerAnswers(port: TunnelManager.activeSocksPort)
             }
             let ms: Double?
             if listens { ms = await speed.quickPing(via: mode) } else { ms = nil }
-            // #470 was: let ms = await speed.quickPing(via: mode)
             // eoc #470
             if Task.isCancelled { return }
             latencyMs = ms
@@ -275,7 +216,6 @@ private struct DiagnosticsFacts: View {
     // MARK: Rows
 
     // boc #471
-    // #471 was: `protocolRow` — a DiagnosticsRow printing "Yandex Telemost ·
     // DataChannel" about the same connection `ConnectHero.identityBlock` names
     // at the top of the same screen. The #461 audit comment that stood here said
     // it in as many words: "Deleting the row is the fix; it is left standing here
@@ -299,9 +239,8 @@ private struct DiagnosticsFacts: View {
         DiagnosticsRow(label: L10n.healthExitLabel.localized()) {
             VStack(alignment: .trailing, spacing: Theme.Metrics.s1) {
                 exitValue
-                // #457: the exit's age. A country printed with no date is a claim
                 // about now made from evidence about then.
-                DiagnosticsAge(at: exitAt, viaIPInfo: true)   // #471
+                DiagnosticsAge(at: exitAt, viaIPInfo: true)
             }
         }
     }
@@ -315,7 +254,6 @@ private struct DiagnosticsFacts: View {
     @ViewBuilder
     private var exitValue: some View {
         if let ip = ipCheck.exitGeo?.ip, !ip.isEmpty {
-            // #337: mask for display only — the value behind it stays real.
             Text(IPMask.display(ip, masked: maskIPs))
                 .font(Theme.Typography.mono)
                 .foregroundStyle(Theme.Palette.textPrimary)
@@ -362,7 +300,7 @@ private struct DiagnosticsFacts: View {
     @ViewBuilder
     private var responseRow: some View {
         DiagnosticsRow(label: L10n.diagResponseLabel.localized()) {
-            VStack(alignment: .trailing, spacing: Theme.Metrics.s1) {   // #471 was: 2
+            VStack(alignment: .trailing, spacing: Theme.Metrics.s1) {
                 Text(responseValue)
                     .font(Theme.Typography.metricValue)
                     .foregroundStyle(responseTone)
@@ -381,7 +319,6 @@ private struct DiagnosticsFacts: View {
     private var responseValue: String {
         if let ms = latencyMs { return L10n.healthLatencyMs_fmt.formatted(Int(ms.rounded())) }
         if probing && latencyAt == nil { return L10n.healthChecking.localized() }
-        // #470: a probe that RAN and got nothing back is a data-path fact, not an
         // absence of measurement — "not measured · checked just now" hid a wedged
         // tunnel (in=0 out=0) under a no-measurement word while the hero above
         // still read Connected. `latencyAt` is stamped on failure too.
@@ -396,8 +333,6 @@ private struct DiagnosticsFacts: View {
     private var responseTone: Color {
         latencyMs == nil ? Theme.Palette.textTertiary : Theme.Palette.textPrimary
     }
-
-    // #471 was: `placeString(_:)` — "City, CC" for the exit row's headline. The
     // place is the hero's, and this row prints the IP; nothing here needs it.
 }
 
@@ -415,7 +350,7 @@ private struct DiagnosticsTools: View {
     @ObservedObject var speed: SpeedTest
     let mode: RouteMode
     let maskIPs: Bool
-    let onSpeedTest: () -> Void   // #461 was: also carrierParams / onCarrierEndpoints
+    let onSpeedTest: () -> Void
 
     // #484 was: view-local stamps on completion/spinner events, which survived
     // route changes and could date a cancelled old run as the current answer.
@@ -424,38 +359,34 @@ private struct DiagnosticsTools: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // #471 was: DiagnosticsSubheader(title:) — see `DiagnosticsFacts.body`.
             OlcSectionHeader(L10n.diagToolsHeader.localized())
                 .padding(.top, Theme.Metrics.s3)
             ipRow
             Divider().overlay(Theme.Palette.separator)
-            speedRow   // #461 was: + a Divider and `carrierRow` below it
+            speedRow
         }
-        // #457: `SpeedResult` is not Equatable and carries no date; the falling
         // edge of `isTesting` is the moment a run we can attribute completed.
-        // #484: timestamps now come from accepted, generation-checked results.
     }
 
     private var ipRow: some View {
         HStack(alignment: .top, spacing: Theme.Metrics.s3) {
             VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
                 Text(L10n.ipCheckTitle.localized())
-                    .font(Theme.Typography.label)   // #471 was: .subheadline
+                    .font(Theme.Typography.label)
                     .foregroundStyle(Theme.Palette.textPrimary)
-                // #471 was: `diagIPSourceHint_fmt` rendered here — a permanent
                 // two-line paragraph under a button whose label already says what
                 // it does. How many services answer is a Settings fact; the
                 // sentence survives where it costs no pixels, as the Run button's
                 // accessibility hint (below).
-                ConnectIPStatus(ipCheck: ipCheck, maskIPs: maskIPs, mode: mode)   // #470: + mode
+                ConnectIPStatus(ipCheck: ipCheck, maskIPs: maskIPs, mode: mode)
                 if let t = ipCheckTime, !ipCheck.isChecking {
                     Label(t.formatted(date: .omitted, time: .shortened), systemImage: "clock")
-                        .font(Theme.Typography.caption)   // #471 was: .caption2
+                        .font(Theme.Typography.caption)
                         .foregroundStyle(Theme.Palette.textTertiary)
                 }
             }
             Spacer(minLength: Theme.Metrics.s2)
-            runIPCheckButton   // #471: extracted — the chain grew a hint
+            runIPCheckButton
         }
         .padding(.vertical, Theme.Metrics.s3)
     }
@@ -464,19 +395,18 @@ private struct DiagnosticsTools: View {
     /// used to print permanently.
     private var runIPCheckButton: some View {
         OlcButton(L10n.ipCheckRun.localized(), role: .secondary, isBusy: ipCheck.isChecking) {
-            Task { await ipCheck.checkAll(via: mode) } // #484: checker owns measurement time.
+            Task { await ipCheck.checkAll(via: mode) }
         }
         .accessibilityHint(L10n.diagIPSourceHint_fmt.formatted(Self.ipSourceCount))
     }
 
     // boc #459
-    // #459 was: a third `OlcMetric` here — `PING ms`, from `speed.lastResult
     // .pingMs`. Block A measures the same route every 8 s and stamps the result;
     // this one was taken once per speed test and could not be dated at all.
     private var speedRow: some View {
-        HStack(alignment: .top, spacing: Theme.Metrics.s3) {          // #471 was: 12
-            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {  // #471 was: 4
-                HStack(alignment: .top, spacing: Theme.Metrics.s4) {  // #471 was: 16
+        HStack(alignment: .top, spacing: Theme.Metrics.s3) {
+            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
+                HStack(alignment: .top, spacing: Theme.Metrics.s4) {
                     // #470 was: speed.lastResult?.downloadMbps / uploadMbps (any route)
                     OlcMetric(label: L10n.speedLabelDL.localized(),
                               value: value(routeResult?.downloadMbps, L10n.speedRateValue_fmt.localized()),
@@ -485,13 +415,12 @@ private struct DiagnosticsTools: View {
                               value: value(routeResult?.uploadMbps, L10n.speedRateValue_fmt.localized()),
                               unit: L10n.speedUnitMbps.localized(), unitInLabel: true)
                 }
-                // #459: the throughput figures keep the card's dating rule — a
                 // run this view watched finish, on this route, or no stamp.
-                if throughputAt != nil, routeResult != nil {   // #470 was: speed.lastResult?.mode == mode
+                if throughputAt != nil, routeResult != nil {
                     DiagnosticsAge(at: throughputAt)
                 }
             }
-            Spacer(minLength: Theme.Metrics.s2)   // #471 was: 8
+            Spacer(minLength: Theme.Metrics.s2)
             OlcButton(L10n.speedTestRun.localized(), role: .secondary,
                       isBusy: speed.isTesting, action: onSpeedTest)
         }
@@ -500,7 +429,6 @@ private struct DiagnosticsTools: View {
     // eoc #459
 
     // boc #461
-    // #461 was: `carrierRow` — the "Using another proxy app?" tool. A title, a
     // two-line audience-selecting hint (`carrierEndpointsRowHint` /
     // `carrierEndpointsRowConnectHint`) and a "Show" button, ~90 pt, mounted
     // permanently on the app's main screen and disabled whenever nothing was
@@ -549,7 +477,6 @@ private struct DiagnosticsTools: View {
 // MARK: - Shared pieces
 
 // boc #471
-// #471 was: `DiagnosticsSubheader` — a local uppercase label claiming to be "the
 // design system's section-header treatment" while using a fourth (font, tint,
 // tracking) recipe of its own. Both call sites draw `OlcSectionHeader` now, which
 // is the treatment, and no view in the app had been using it.
@@ -567,8 +494,6 @@ private struct DiagnosticsTools: View {
 private struct DiagnosticsRow<Trailing: View>: View {
     private let label: String
     private let trailing: () -> Trailing
-
-    // #471 was: init(label:note:trailing:)
     init(label: String, @ViewBuilder trailing: @escaping () -> Trailing) {
         self.label = label
         self.trailing = trailing
@@ -577,7 +502,7 @@ private struct DiagnosticsRow<Trailing: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(label)
-                .font(Theme.Typography.label)   // #471 was: .subheadline
+                .font(Theme.Typography.label)
                 .foregroundStyle(Theme.Palette.textSecondary)
             Spacer(minLength: Theme.Metrics.s3)
             trailing()
@@ -604,9 +529,8 @@ private struct DiagnosticsAge: View {
 
     var body: some View {
         Text(text)
-            .font(Theme.Typography.caption)   // #471 was: .caption2
+            .font(Theme.Typography.caption)
             .foregroundStyle(Theme.Palette.textTertiary)
-            // #471 was: `.lineLimit(1)`. The exit's line is longer now, and a
             // provenance clause that truncates says nothing.
             .lineLimit(2)
             .multilineTextAlignment(.trailing)
@@ -615,7 +539,6 @@ private struct DiagnosticsAge: View {
     private var text: String {
         guard let at else { return L10n.healthNeverMeasured.localized() }
         let aged = L10n.healthCheckedAgo_fmt.formatted(HealthAge.phrase(Date().timeIntervalSince(at)))
-        // #471: `diagAgeVia_fmt` names the ONE service the exit lookup uses.
         return viaIPInfo ? L10n.diagAgeVia_fmt.formatted(aged) : aged
     }
 }
@@ -635,14 +558,13 @@ private struct ConnectIPStatus: View {
     var body: some View {
         if ipCheck.isChecking {
             Text(L10n.ipChecking.localized())
-                .font(Theme.Typography.caption)   // #471 was: mono — it is a word, not an address
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.textSecondary)
         } else if !hasResults {
             Text(L10n.ipNotChecked.localized())
-                .font(Theme.Typography.caption)   // #471 was: .caption
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.textSecondary)
         } else if collapsed, let ip = summaryIP {
-            // #337: mask for display only — the value behind it stays real.
             // #470: say WHICH ROUTE answered, and be green only while that is the
             // route this card is about. `IPResult.mode` was stored and never
             // rendered, and nothing clears results across connect / disconnect,
@@ -652,15 +574,15 @@ private struct ConnectIPStatus: View {
             let agree = L10n.ipSourcesAgree_fmt.formatted(IPMask.display(ip, masked: maskIPs),
                                                           ipCheck.results.filter { $0.ip != nil }.count)
             Text("\(agree) · \(resultRoute.label)")
-                .font(Theme.Typography.mono)   // #471: an address — mono stays
+                .font(Theme.Typography.mono)
                 .foregroundStyle(resultIsCurrentRoute ? Theme.Palette.green : Theme.Palette.textSecondary)
         } else {
-            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {   // #471 was: 3
+            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
                 if allDone, Set(ipCheck.results.compactMap { $0.ip }).count > 1 {
                     leakWarning
                 }
                 ForEach(ipCheck.results) { r in sourceRow(r) }
-                routeCaption   // #470
+                routeCaption
             }
         }
     }
@@ -672,18 +594,18 @@ private struct ConnectIPStatus: View {
 
     private var routeCaption: some View {
         Text(resultRoute.label)
-            .font(Theme.Typography.caption)   // #471 was: .caption2
+            .font(Theme.Typography.caption)
             .foregroundStyle(Theme.Palette.textTertiary)
     }
     // eoc #470
 
     private var leakWarning: some View {
-        HStack(spacing: Theme.Metrics.s2) {   // #471 was: 6
+        HStack(spacing: Theme.Metrics.s2) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(Theme.Typography.caption)   // #471 was: .caption2
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.red)
             Text(L10n.ipDnsLeak.localized())
-                .font(Theme.Typography.caption)   // #471 was: .caption
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.red)
         }
     }
@@ -692,16 +614,16 @@ private struct ConnectIPStatus: View {
     private func sourceRow(_ r: IPResult) -> some View {
         HStack {
             Text(r.label)
-                .font(Theme.Typography.caption)   // #471 was: .caption2
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.textSecondary)
             Spacer()
             if let ip = r.ip {
                 Text(IPMask.display(ip, masked: maskIPs))
-                    .font(Theme.Typography.mono)   // #471 was: .caption2 mono
+                    .font(Theme.Typography.mono)
                     .foregroundStyle(Theme.Palette.textPrimary)
             } else if let err = r.error {
                 Text(err)
-                    .font(Theme.Typography.caption)   // #471 was: .caption2
+                    .font(Theme.Typography.caption)
                     .foregroundStyle(Theme.Palette.red)
                     .lineLimit(1)
                     .truncationMode(.middle)

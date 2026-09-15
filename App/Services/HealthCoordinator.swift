@@ -61,6 +61,11 @@ final class HealthCoordinator: ObservableObject {
     private static let writeQueue = DispatchQueue(label: "olcrtc.health.userdefaults")
 
     private var store: [String: NodeHealth] = [:]
+    /// Last known non-secret state per server host (App/Models/NodeHealth.swift,
+    /// `HostSnapshot`), keyed by ServerHost.id.uuidString. Separate key so a
+    /// decode failure here cannot touch the health map, and vice versa.
+    private static let hostSnapshotKey = "olcrtc_host_snapshot_v1"
+    private var hostSnapshots: [String: HostSnapshot] = [:]
     private var inFlight: Set<UUID> = []
     /// The serial probe chain. Every `verify` links itself behind the previous
     /// task, so two probes never run concurrently.
@@ -96,8 +101,58 @@ final class HealthCoordinator: ObservableObject {
     init(loadPersisted: Bool = true) {
         if loadPersisted {
             load()
+            loadHostSnapshots()
             startAgeTickerIfNeeded()
         }
+    }
+
+    // MARK: Host snapshots
+
+    /// The last known state of a host, or nil when it was never probed.
+    func hostSnapshot(for hostID: UUID) -> HostSnapshot? {
+        hostSnapshots[hostID.uuidString]
+    }
+
+    /// Record a probe result for a host. Persisted asynchronously; bumps
+    /// `revision` so cards redraw.
+    func noteHostSnapshot(_ snapshot: HostSnapshot, for hostID: UUID) {
+        hostSnapshots[hostID.uuidString] = snapshot
+        saveHostSnapshots()
+        bump()
+    }
+
+    /// Drop a host's snapshot (host removed / server uninstalled).
+    func forgetHost(_ hostID: UUID) {
+        guard hostSnapshots.removeValue(forKey: hostID.uuidString) != nil else { return }
+        saveHostSnapshots()
+        bump()
+    }
+
+    /// Tab-entry throttle for one host: false while its last probe is younger
+    /// than `HostSnapshotPolicy.recheckSeconds`, unless forced.
+    func shouldRecheckHost(_ hostID: UUID, force: Bool, now: Date = Date()) -> Bool {
+        HostSnapshotPolicy.shouldRecheck(lastProbedAt: hostSnapshot(for: hostID)?.probedAt,
+                                         force: force, now: now)
+    }
+
+    private func loadHostSnapshots() {
+        hostSnapshots = Self.decodeHostSnapshots(
+            UserDefaults.standard.data(forKey: Self.hostSnapshotKey), now: Date())
+    }
+
+    /// Pure decode + forget-window filter; corrupt data ⇒ empty map, never throws.
+    nonisolated static func decodeHostSnapshots(_ data: Data?, now: Date) -> [String: HostSnapshot] {
+        guard let data,
+              let decoded = try? JSONDecoder().decode([String: HostSnapshot].self, from: data)
+        else { return [:] }
+        let cutoff = now.addingTimeInterval(-HostSnapshotPolicy.forgetSeconds)
+        return decoded.filter { $0.value.probedAt > cutoff }
+    }
+
+    private func saveHostSnapshots() {
+        guard let data = try? JSONEncoder().encode(hostSnapshots) else { return }
+        let key = Self.hostSnapshotKey
+        Self.writeQueue.async { UserDefaults.standard.set(data, forKey: key) }
     }
 
     private func bump() { revision &+= 1 }
@@ -601,7 +656,9 @@ final class HealthCoordinator: ObservableObject {
         tail = nil                 // #456 (audit): cancelAll no longer drops these
         inFlight.removeAll()       // — a test starts from a clean slate regardless
         store.removeAll()
+        hostSnapshots.removeAll()
         save()
+        saveHostSnapshots()
         bump()
     }
 

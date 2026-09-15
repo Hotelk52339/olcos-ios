@@ -20,6 +20,45 @@ import Network
 
 enum CarrierEndpoints {
 
+    // MARK: Jitsi instances
+
+    /// Public Jitsi Meet instances offered by the add-server wizard. The list
+    /// mirrors `olcrtc-upstream/docs/jitsi.instances.yaml` (hosts come and go —
+    /// the UI tells the user to check one in a browser first). The app default
+    /// (`AppConstants.defaultJitsiBaseURL`) is always first.
+    static let jitsiInstances: [String] = {
+        let upstream = [
+            "meet.egovm.ru",
+            "conference.ct.placetime.team",
+            "jitsy.amateusfox.online",
+            "meet.mamba.group",
+            "meet.ecopsy.com",
+            "meet.mirox.chat",
+            "webinar.knomary.dev",
+            "meet.playform.ru",
+            "webinar.devknomarylms.ru",
+            "zgn-y-vc01.zignotch.com",
+            "conf.expressmoney.com",
+            "m.catonmoon.com",
+            "conf.hyperia.space",
+            "jitsi.etudevs.ru",
+            "meet.riddlerx.org",
+        ]
+        let preferred = host(fromRoomID: AppConstants.defaultJitsiBaseURL) ?? ""
+        var out: [String] = preferred.isEmpty ? [] : [preferred]
+        for h in upstream where !out.contains(h) { out.append(h) }
+        return out
+    }()
+
+    /// `https://<host>` for a Jitsi instance host; already-schemed input is
+    /// passed through unchanged (trailing slash removed).
+    static func jitsiBaseURL(forInstance host: String) -> String {
+        let raw = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return "" }
+        let withScheme = raw.contains("://") ? raw : "https://" + raw
+        return withScheme.hasSuffix("/") ? String(withScheme.dropLast()) : withScheme
+    }
+
     /// The carrier base host for a connection, when derivable from its params.
     /// nil when the roomID carries no host (telemost / wbstream opaque IDs).
     static func baseHost(for params: OlcrtcConnection) -> String? {

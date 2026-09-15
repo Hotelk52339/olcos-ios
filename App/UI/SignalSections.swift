@@ -1,7 +1,7 @@
 import SwiftUI
 
-// boc #492: shared presentation only. These components do not own stores,
-// perform network work, or replace the native controls' existing bindings.
+// Shared Form presentation only. These components do not own stores, perform
+// network work, or replace the native controls' existing bindings.
 struct SignalSectionHeader: View {
     let title: String
     let systemImage: String?
@@ -29,21 +29,34 @@ struct SignalSectionHeader: View {
     }
 }
 
+/// A navigation/directory row: glyph, title and — when the row has a current
+/// value — one caption line under the title in the same secondary style on
+/// every row, so sibling rows never mix typography.
 struct SignalSettingsLabel: View {
     let title: String
+    let subtitle: String?
     let systemImage: String
 
-    init(_ title: String, systemImage: String) {
+    init(_ title: String, subtitle: String? = nil, systemImage: String) {
         self.title = title
+        self.subtitle = subtitle
         self.systemImage = systemImage
     }
 
     var body: some View {
         Label {
-            Text(title)
-                .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Palette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
+                Text(title)
+                    .font(Theme.Typography.body)
+                    .foregroundStyle(Theme.Palette.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(Theme.Typography.caption)
+                        .foregroundStyle(Theme.Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         } icon: {
             Image(systemName: systemImage)
                 .foregroundStyle(Theme.Palette.textSecondary)
@@ -74,4 +87,3 @@ extension View {
             .listRowSeparatorTint(Theme.Palette.cardBorder)
     }
 }
-// eoc #492

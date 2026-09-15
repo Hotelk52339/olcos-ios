@@ -50,11 +50,14 @@ final class HostDisplayTests: XCTestCase {
         }
     }
 
-    // MARK: HostBase.seed (pre-probe — never asserts running)
+    // MARK: HostBase ↔ HostSnapshotBase
 
-    func testSeedNeverAssertsRunning() {
-        XCTAssertEqual(HostBase.seed(lastContainerName: nil), .unknown)
-        XCTAssertEqual(HostBase.seed(lastContainerName: "olcrtc-server-abc"), .stopped)
+    func testSnapshotBaseRoundTrips() {
+        let all: [HostBase] = [.unknown, .noPodman, .noImage, .imageReady, .stopped, .running]
+        for base in all {
+            XCTAssertEqual(HostBase(snapshot: base.snapshotBase), base)
+        }
+        XCTAssertEqual(HostBase(snapshot: .unknown), .unknown)
     }
 
     // MARK: HostOp.target / phases

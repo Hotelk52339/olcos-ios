@@ -94,8 +94,9 @@ If the key changes, olcOS warns and rejects the connection rather than silently
 replacing the saved key. An expected rebuild or key rotation can be handled by
 explicitly confirming a reset of saved trust, then connecting again to learn
 the next key. Cancel the reset if the change is unexpected; routine timeouts
-are not a reason to reset trust.
-[Host editor](../App/Views/AddServerHostView.swift) ·
+are not a reason to reset trust. The reset lives on the “Manage server”
+screen and appears only after a key mismatch.
+[Manage server](../App/Views/ServerAdvancedView.swift) ·
 [SSH connection handling](../App/Core/SSHRunner.swift).
 
 SSH may use a local SOCKS relay when proxy mode is active, or dial through
@@ -137,8 +138,9 @@ signed installation. [Background keeper](../App/Services/BackgroundRuntimeKeeper
 Record version/build, selected and actual mode, signing method, iOS/device,
 language and carrier/transport. Note whether the failure follows a network
 change, lock/unlock, foreground return or an explicit disconnect.
-Compare a real diagnostic result with its route and timestamp; the animated
-waveform is decorative, not a packet or speed measurement.
+Compare a real diagnostic result with its route and timestamp; the hero
+picture (beam and stone wall) follows measured throughput but is not a
+packet or speed measurement and prints no numbers.
 [Diagnostic guide](diagnostic-messages.md) · [motion policy](../App/Views/SignalWaveform.swift).
 
 Use the [bug/regression forms](https://github.com/Hotelk52339/olcos-ios/issues/new/choose)

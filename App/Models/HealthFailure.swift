@@ -109,6 +109,15 @@ enum HealthFailureMapper {
         let s = raw.lowercased()
         func any(_ needles: [String]) -> Bool { needles.contains { s.contains($0) } }
 
+        // 0. A handshake that simply ran out of time is NOT a key problem: the
+        //    hello went out and nobody in the room answered. Seen on a phone that
+        //    imported a shared connection — the server log had no session from
+        //    it at all, yet the app said "key no longer matches". Wrong key
+        //    fails as a decrypt error / EOF (case 1), never as a timeout.
+        if any(["read welcome", "handshake client", "send hello"])
+            && any(["timeout", "timed out", "deadline exceeded", "context canceled"]) {
+            return .noPeer
+        }
         // 1. The user's own incident: the server was reinstalled, its key rotated,
         //    and the stored key no longer decrypts the welcome frame.
         if any(["read welcome", "handshake client", "handshake rejected",

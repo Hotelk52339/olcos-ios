@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>olcOS · concept preview source</title>
+<!--
+  Source of docs/assets/olcos-preview.png (?lang=ru) and olcos-preview-en.png
+  (?lang=en): a hand-laid mockup of the three tabs using the app's current
+  strings (App/Localization/L10nTable.swift), theme tokens (App/UI/Theme.swift)
+  and the same hero scene the app draws (hero-scene.js, the study behind
+  App/Views/FirewallArmorRenderer.swift). Demo data; not a native screenshot.
+  Render with: node docs/assets/src/render.mjs
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Theme.Palette (dark) */
+  --bg:#0B0C0F; --card:#17191D; --card-border:rgba(255,255,255,.07);
+  --fill:rgba(255,255,255,.10); --fill-border:rgba(255,255,255,.14);
+  --text:#FFFFFF; --text2:rgba(235,235,245,.60); --text3:rgba(235,235,245,.30);
+  --accent:#4F5BD5; --green:#30D158; --red:#FF5F57;
+  --signal:#5EAEFF; --cyan:#36D8F5; --violet:#8B7BFF;
+  --sep:rgba(84,84,88,.55);
+  --ui:Nunito,"Noto Sans",system-ui,sans-serif;   /* stands in for SF Rounded */
+  --page:Inter,"Noto Sans",system-ui,sans-serif;
+  --mono:"JetBrains Mono","DejaVu Sans Mono",monospace;
+  --emoji:"Noto Color Emoji","Apple Color Emoji",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--page);-webkit-font-smoothing:antialiased}
+.page{width:1248px;height:1064px;position:relative;overflow:hidden}
+.page:before{content:"";position:absolute;inset:0;background:
+  radial-gradient(60% 40% at 50% 62%,rgba(94,174,255,.10),rgba(11,12,15,0) 70%),
+  radial-gradient(40% 30% at 22% 70%,rgba(139,123,255,.07),rgba(11,12,15,0) 70%),
+  radial-gradient(40% 30% at 78% 70%,rgba(48,209,88,.06),rgba(11,12,15,0) 70%)}
+.head{position:absolute;left:96px;top:56px;right:96px}
+.eyebrow{font-size:13px;letter-spacing:.14em;color:var(--text2);font-weight:500;text-transform:uppercase}
+.eyebrow span{margin:0 8px;color:var(--text3)}
+h1{font-size:64px;line-height:1;margin:10px 0 12px;letter-spacing:-.045em;font-weight:800}
+.tagline{font-size:20px;color:var(--text2);margin:0;font-weight:400}
+.icon{position:absolute;right:0;top:4px;width:104px;height:104px;border-radius:24px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+
+/* ---- phones ---- */
+.phones{position:absolute;left:0;right:0;top:240px;display:flex;justify-content:center;align-items:flex-end;gap:36px}
+.col{display:flex;flex-direction:column;align-items:center}
+.col.mid{margin-bottom:26px}
+.phone{width:308px;height:668px;background:#000;border-radius:52px;padding:9px;position:relative;
+  box-shadow:0 0 0 1.5px #303238,0 0 0 3px #101114,0 40px 80px rgba(0,0,0,.65),0 10px 24px rgba(0,0,0,.5)}
+.screen{position:relative;height:100%;background:var(--bg);border-radius:44px;overflow:hidden;font-family:var(--ui)}
+.island{position:absolute;left:50%;top:11px;width:92px;height:26px;margin-left:-46px;background:#000;border-radius:14px;z-index:5}
+.status{height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 8px 32px;font-size:14px;font-weight:700}
+.status .right{display:flex;gap:6px;align-items:center}
+.status svg{display:block}
+.nav{height:40px;display:flex;align-items:center;justify-content:center;position:relative;font-size:15px;font-weight:700;border-bottom:.5px solid rgba(255,255,255,.08);background:rgba(20,21,26,.9)}
+.nav .plus{position:absolute;right:16px;top:8px;width:24px;height:24px;color:var(--signal);font-size:24px;line-height:22px;font-weight:500;text-align:center;font-family:var(--page)}
+.body{padding:8px 16px 0;position:relative;height:calc(668px - 18px - 52px - 40px - 78px);overflow:hidden}
+.body:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(rgba(11,12,15,0),var(--bg))}
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:78px;border-top:.5px solid rgba(255,255,255,.10);background:rgba(20,21,26,.92);display:flex;justify-content:space-around;align-items:flex-start;padding:7px 8px 0}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px;color:rgba(235,235,245,.42);font-weight:600;width:90px}
+.tab svg{width:26px;height:26px}
+.tab.on{color:var(--signal)}
+
+/* ---- shared UI ---- */
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:17px;padding:13px 14px}
+.h2{font-size:14.5px;font-weight:700;margin:16px 0 8px 2px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:.5px solid var(--sep);font-size:13px;font-weight:500}
+.row .t.nw{white-space:nowrap}
+.row:first-child{border-top:0}
+.row .t{font-weight:600}
+.row .s{font-size:10.5px;color:var(--text2);margin-top:2px;font-weight:500}
+.row .mono{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.chev{color:var(--text3);font-size:15px;font-weight:700;margin-left:6px;line-height:1}
+.value{color:var(--text2);display:flex;align-items:center;gap:4px;text-align:right;font-weight:500;font-size:12px;line-height:1.25}
+.updown{width:10px;height:14px;color:var(--text3)}
+.chip{font-size:10px;font-weight:700;padding:4px 8px;border-radius:8px;background:var(--fill);border:1px solid var(--fill-border);color:var(--text2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.chip.ok{color:var(--green);background:rgba(48,209,88,.12);border-color:rgba(48,209,88,.22)}
+.chip i{width:6px;height:6px;border-radius:3px;background:currentColor;display:inline-block}
+.btn{height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:700;background:var(--fill);border:1px solid var(--fill-border);color:var(--signal)}
+.btn svg{width:15px;height:15px}
+.toggle{width:42px;height:26px;border-radius:13px;background:var(--green);position:relative;flex:none}
+.toggle:after{content:"";position:absolute;right:2px;top:2px;width:22px;height:22px;border-radius:11px;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.35)}
+.toggle.off{background:rgba(120,120,128,.36)}
+.toggle.off:after{right:auto;left:2px}
+.more{width:24px;height:24px;border-radius:12px;border:1.5px solid var(--text2);display:grid;place-items:center;color:var(--text2);font-size:12px;letter-spacing:.5px;line-height:1;padding-bottom:5px;flex:none}
+.link{color:var(--signal);font-weight:700}
+.glyph{width:18px;height:18px;color:var(--text2);flex:none}
+.lead{display:flex;align-items:center;gap:10px}
+
+/* ---- Connections ---- */
+.hero{text-align:center;padding-top:14px}
+.state{font-size:29px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
+.evidence{font-size:11px;font-weight:600;color:var(--green);margin-top:8px}
+.evidence .flag{font-family:var(--emoji);margin-right:3px}
+canvas.pic{display:block;width:276px;height:170px;margin:2px -4px 4px}
+.plate{margin-top:16px;text-align:left;display:flex;justify-content:space-between;align-items:flex-start}
+.plate .svc{font-size:16px;font-weight:600}
+.plate .sub{font-size:13px;color:var(--text2);margin-top:3px;font-weight:500}
+.plate .sub b{font-weight:700}
+.plate .sub em{font-style:normal;color:var(--text3)}
+.plate .scope{font-size:10.5px;color:var(--text2);margin-top:9px;font-weight:500}
+
+/* ---- Servers ---- */
+.host{padding:10px 2px 12px;display:flex;justify-content:space-between;align-items:flex-start}
+.host .name{font-size:19px;font-weight:700}
+.host .name .flag{font-family:var(--emoji);font-size:15px;margin-left:4px}
+.host .ssh{font-family:var(--mono);font-size:10.5px;color:var(--text2);margin-top:3px}
+.host .machine{font-size:10.5px;color:var(--text2);margin-top:3px;font-weight:500}
+.headline{display:flex;gap:10px;align-items:flex-start}
+.headline svg{width:20px;height:20px;flex:none;margin-top:1px}
+.headline .h{font-size:15px;font-weight:700}
+.headline .d{white-space:nowrap;font-size:10.5px;color:var(--text2);margin-top:2px;font-weight:500}
+.protoHead{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:.5px solid var(--sep)}
+.protoHead .t{font-size:14.5px;font-weight:700}
+.protoHead .add{font-size:12.5px;display:flex;align-items:center;gap:6px}
+.protoHead .add svg{width:15px;height:15px}
+.proto{padding:9px 0;border-top:.5px solid var(--sep)}
+.proto .top{display:flex;justify-content:space-between;align-items:center}
+.proto .n{font-size:14px;font-weight:600}
+.proto .tr{font-size:10.5px;color:var(--text2);margin-top:1px;font-weight:500}
+.proto .bottom{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:10.5px;color:var(--text2);font-weight:500;white-space:nowrap}
+.links{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:0 2px;font-size:13px}
+
+/* ---- captions ---- */
+.caption{margin-top:22px;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;display:flex;gap:12px;align-items:baseline;color:var(--text)}
+.caption .n{color:var(--signal);font-weight:600;font-size:11.5px;letter-spacing:.1em}
+.footer{position:absolute;left:96px;right:96px;bottom:30px;font-size:11.5px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;font-weight:500;text-align:center}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <div class="head">
+    <div class="eyebrow">iOS client<span>/</span>powered by olcrtc</div>
+    <h1>olcOS</h1>
+    <p class="tagline" data-t="tagline"></p>
+    <img class="icon" src="../app-icon.png" alt="">
+  </div>
+
+  <div class="phones">
+    <!-- 02 Servers -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span>9:41</span><span class="right">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3.2" height="4" rx=".8"/><rect x="4.5" y="4.8" width="3.2" height="6.2" rx=".8"/><rect x="9" y="2.4" width="3.2" height="8.6" rx=".8"/><rect x="13.5" y="0" width="3.2" height="11" rx=".8"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 3.8a9.5 9.5 0 0 1 13 0"/><path d="M4.1 6.4a5.8 5.8 0 0 1 7.8 0"/><path d="M6.7 9a2.3 2.3 0 0 1 2.6 0"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="22" height="11" rx="3"/><rect x="2" y="2" width="19" height="8" rx="1.5" fill="currentColor" stroke="none"/><path d="M24.2 4.2v3.6" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span></div>
+        <div class="nav"><span data-t="tabServers"></span><span class="plus">+</span></div>
+        <div class="body">
+          <div class="host">
+            <div>
+              <div class="name">ams-1<span class="flag">🇳🇱</span></div>
+              <div class="ssh">root@203.0.113.42:22</div>
+              <div class="machine" data-t="machineLine"></div>
+            </div>
+            <div class="more">···</div>
+          </div>
+          <div class="card">
+            <div class="headline">
+              <svg viewBox="0 0 24 24" fill="var(--green)"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#0B0C0F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div><div class="h" data-t="vpsTitleRunning"></div><div class="d" data-t="serverHeadline"></div></div>
+            </div>
+            <div class="protoHead">
+              <span class="t" data-t="protocolsSectionHeader"></span>
+              <span class="add link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v10M7 12h10"/></svg><span data-t="addProtocolAction"></span></span>
+            </div>
+            <div class="proto" style="border-top:0;padding-top:12px">
+              <div class="top"><div><div class="n">Yandex Telemost</div><div class="tr">VP8</div></div><div class="more">···</div></div>
+              <div class="bottom"><span class="chip ok"><i></i><span data-t="healthVerified"></span></span><span data-t="verifiedHint1"></span></div>
+            </div>
+            <div class="proto">
+              <div class="top"><div><div class="n">Jitsi</div><div class="tr">DataChannel</div></div><div class="more">···</div></div>
+              <div class="bottom"><span class="chip ok"><i></i><span data-t="healthVerified"></span></span><span data-t="verifiedHint2"></span></div>
+            </div>
+          </div>
+          <div class="btn" style="margin-top:14px"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"/></svg><span data-t="actionStop"></span></div>
+          <div class="links"><span class="link" data-t="logsTitle"></span><span class="link"><span data-t="vpsManageServer"></span> <span class="chev" style="color:var(--signal)">›</span></span></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3.5 9.5h17M3.5 14.5h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span data-t="tabConnections"></span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="4" width="17" height="6.5" rx="1.8"/><rect x="3.5" y="13.5" width="17" height="6.5" rx="1.8"/><path d="M7 7.25h.01M7 16.75h.01M10 7.25h6M10 16.75h6"/></svg><span data-t="tabServers"></span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 2.5l2 .3.6 2.3 1.9 1 2.1-1 1.5 1.4-1 2.1 1 1.9 2.3.6.3 2-.3 2-2.3.6-1 1.9 1 2.1-1.5 1.4-2.1-1-1.9 1-.6 2.3-2 .3-2-.3-.6-2.3-1.9-1-2.1 1-1.5-1.4 1-2.1-1-1.9-2.3-.6-.3-2 .3-2 2.3-.6 1-1.9-1-2.1 1.5-1.4 2.1 1 1.9-1 .6-2.3z"/><circle cx="12" cy="12" r="3.2"/></svg><span data-t="tabSettings"></span></div>
+        </div>
+      </div></div>
+      <div class="caption"><span class="n">02</span><span data-t="tabServers"></span></div>
+    </div>
+
+    <!-- 01 Connections -->
+    <div class="col mid">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span>9:41</span><span class="right">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3.2" height="4" rx=".8"/><rect x="4.5" y="4.8" width="3.2" height="6.2" rx=".8"/><rect x="9" y="2.4" width="3.2" height="8.6" rx=".8"/><rect x="13.5" y="0" width="3.2" height="11" rx=".8"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 3.8a9.5 9.5 0 0 1 13 0"/><path d="M4.1 6.4a5.8 5.8 0 0 1 7.8 0"/><path d="M6.7 9a2.3 2.3 0 0 1 2.6 0"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="22" height="11" rx="3"/><rect x="2" y="2" width="19" height="8" rx="1.5" fill="currentColor" stroke="none"/><path d="M24.2 4.2v3.6" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span></div>
+        <div class="nav"><span data-t="tabConnections"></span><span class="plus">+</span></div>
+        <div class="body">
+          <div class="hero">
+            <div class="state" data-t="stateConnected"></div>
+            <div class="evidence"><span class="flag">🇳🇱</span><span data-t="evidence"></span></div>
+            <canvas class="pic" id="pic"></canvas>
+            <div class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.5 6.6a7.8 7.8 0 1 0 11 0"/></svg><span data-t="actionDisconnect"></span></div>
+            <div class="card plate">
+              <div>
+                <div class="svc">Yandex Telemost</div>
+                <div class="sub"><b>VP8</b><em> · </em>ams-1</div>
+                <div class="scope" data-t="heroScopeProxy"></div>
+              </div>
+              <div class="more">···</div>
+            </div>
+          </div>
+          <div class="h2" data-t="connectListOtherHeader"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><div><div class="t">Jitsi</div><div class="s">DataChannel · ams-1</div></div><span class="chip"><i></i><span data-t="healthChipNever"></span></span></div>
+          </div>
+          <div class="h2" data-t="diagnosticsTitle"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><span class="t" data-t="ipCheckTitle"></span><span class="chev">›</span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3.5 9.5h17M3.5 14.5h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span data-t="tabConnections"></span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="4" width="17" height="6.5" rx="1.8"/><rect x="3.5" y="13.5" width="17" height="6.5" rx="1.8"/><path d="M7 7.25h.01M7 16.75h.01M10 7.25h6M10 16.75h6"/></svg><span data-t="tabServers"></span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 2.5l2 .3.6 2.3 1.9 1 2.1-1 1.5 1.4-1 2.1 1 1.9 2.3.6.3 2-.3 2-2.3.6-1 1.9 1 2.1-1.5 1.4-2.1-1-1.9 1-.6 2.3-2 .3-2-.3-.6-2.3-1.9-1-2.1 1-1.5-1.4 1-2.1-1-1.9-2.3-.6-.3-2 .3-2 2.3-.6 1-1.9-1-2.1 1.5-1.4 2.1 1 1.9-1 .6-2.3z"/><circle cx="12" cy="12" r="3.2"/></svg><span data-t="tabSettings"></span></div>
+        </div>
+      </div></div>
+      <div class="caption"><span class="n">01</span><span data-t="tabConnections"></span></div>
+    </div>
+
+    <!-- 03 Settings -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span>9:41</span><span class="right">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3.2" height="4" rx=".8"/><rect x="4.5" y="4.8" width="3.2" height="6.2" rx=".8"/><rect x="9" y="2.4" width="3.2" height="8.6" rx=".8"/><rect x="13.5" y="0" width="3.2" height="11" rx=".8"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 3.8a9.5 9.5 0 0 1 13 0"/><path d="M4.1 6.4a5.8 5.8 0 0 1 7.8 0"/><path d="M6.7 9a2.3 2.3 0 0 1 2.6 0"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="22" height="11" rx="3"/><rect x="2" y="2" width="19" height="8" rx="1.5" fill="currentColor" stroke="none"/><path d="M24.2 4.2v3.6" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span></div>
+        <div class="nav"><span data-t="tabSettings"></span></div>
+        <div class="body">
+          <div class="h2" style="margin-top:6px" data-t="configModeSectionHeader"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><span class="t nw" data-t="configModeSectionHeader"></span><span class="value"><span data-t="tunnelModeAutomatic" style="max-width:118px"></span><svg class="updown" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"/></svg></span></div>
+            <div class="row"><span class="t" data-t="tunnelCompareDisclosure"></span><span class="chev">›</span></div>
+          </div>
+          <div class="h2" data-t="settingsSectionOnOpen"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><span class="t" data-t="autoConnectOnLaunchLabel"></span><span class="toggle"></span></div>
+            <div class="row"><span class="t" data-t="settingsRefreshOnEntryToggle"></span><span class="toggle"></span></div>
+          </div>
+          <div class="h2" data-t="settingsSectionStayConnected"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><span class="t" data-t="settingsBackgroundLabel"></span><span class="toggle"></span></div>
+          </div>
+          <div class="h2" data-t="appearanceLabel"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><span class="t" data-t="languageLabel"></span><span class="value"><span data-t="languageValue"></span><svg class="updown" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"/></svg></span></div>
+            <div class="row"><span class="t" data-t="themeLabel"></span><span class="value"><span data-t="appearanceSystem"></span><svg class="updown" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"/></svg></span></div>
+            <div class="row"><span class="t" data-t="maskIPsLabel"></span><span class="toggle off"></span></div>
+          </div>
+          <div class="h2" data-t="settingsSectionAbout"></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="row"><span style="color:var(--text2)">olcOS</span><span class="mono">2.0.2</span></div>
+            <div class="row"><span class="lead"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v10M8.5 13.5L12 17l3.5-3.5"/></svg><span><div class="t" data-t="settingsSectionUpdates"></div><div class="s" data-t="settingsUpdateCheckOn"></div></span></span><span class="chev">›</span></div>
+            <div class="row"><span class="lead"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span class="t" data-t="settingsViewLogsRow"></span></span><span class="chev">›</span></div>
+            <div class="row"><span class="lead"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="var(--card)"/><circle cx="15" cy="12" r="2" fill="var(--card)"/><circle cx="8" cy="17" r="2" fill="var(--card)"/></svg><span class="t" data-t="settingsAdvancedRow"></span></span><span class="chev">›</span></div>
+          </div>
+          <div class="card" style="padding:2px 14px;margin-top:20px">
+            <div class="row" style="justify-content:center;color:var(--red)"><span class="t" data-t="resetSettingsAction"></span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3.5 9.5h17M3.5 14.5h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span data-t="tabConnections"></span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="4" width="17" height="6.5" rx="1.8"/><rect x="3.5" y="13.5" width="17" height="6.5" rx="1.8"/><path d="M7 7.25h.01M7 16.75h.01M10 7.25h6M10 16.75h6"/></svg><span data-t="tabServers"></span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 2.5l2 .3.6 2.3 1.9 1 2.1-1 1.5 1.4-1 2.1 1 1.9 2.3.6.3 2-.3 2-2.3.6-1 1.9 1 2.1-1.5 1.4-2.1-1-1.9 1-.6 2.3-2 .3-2-.3-.6-2.3-1.9-1-2.1 1-1.5-1.4 1-2.1-1-1.9-2.3-.6-.3-2 .3-2 2.3-.6 1-1.9-1-2.1 1.5-1.4 2.1 1 1.9-1 .6-2.3z"/><circle cx="12" cy="12" r="3.2"/></svg><span data-t="tabSettings"></span></div>
+        </div>
+      </div></div>
+      <div class="caption"><span class="n">03</span><span data-t="tabSettings"></span></div>
+    </div>
+  </div>
+
+  <div class="footer" data-t="footer"></div>
+</div>
+
+<script src="./hero-scene.js"></script>
+<script>
+// Strings copied from App/Localization/L10nTable.swift (key in the comment).
+const STRINGS = {
+  ru: {
+    tagline: 'Ваш iPhone. Ваш сервер. Ваше подключение.',          // README.ru.md
+    tabConnections: 'Подключения',                                   // tabConnections
+    tabServers: 'Серверы',                                           // tabServers
+    tabSettings: 'Настройки',                                        // tabSettings
+    stateConnected: 'Подключено',                                    // stateConnected
+    evidence: 'Amsterdam, NL · только что',                          // exit line + ageJustNow
+    actionDisconnect: 'Отключить',                                   // actionDisconnect
+    heroScopeProxy: 'SOCKS5 · порт 8808',                            // heroScopeProxy_fmt
+    connectListOtherHeader: 'Сменить протокол',                      // connectListOtherHeader
+    healthChipNever: 'не проверено',                                 // healthChipNever
+    healthVerified: 'Работает',                                      // healthVerified
+    verifiedHint1: 'Проверено только что · 32 мс',                   // healthVerifiedHint_fmt + ageJustNow
+    verifiedHint2: 'Проверено только что · 41 мс',
+    diagnosticsTitle: 'Диагностика',                                 // diagnosticsTitle
+    ipCheckTitle: 'Проверка IP',                                     // ipCheckTitle
+    machineLine: 'Диск 3.3/8.0G · RAM 0.4/1.9G · аптайм 13:45',     // vpsMachineLine_fmt
+    vpsTitleRunning: 'Работает',                                     // vpsTitleRunning
+    serverHeadline: '2 из 2 протоколов проверено только что',        // vpsHeadlineProtocolsVerified_fmt
+    protocolsSectionHeader: 'Протоколы',                             // protocolsSectionHeader
+    addProtocolAction: 'Добавить протокол',                          // addProtocolAction
+    actionStop: 'Остановить сервер',                                 // actionStop
+    logsTitle: 'Логи',                                               // logsTitle
+    vpsManageServer: 'Управление сервером',                          // vpsManageServer
+    configModeSectionHeader: 'Режим туннеля',                        // configModeSectionHeader
+    tunnelModeAutomatic: 'Автоматически (рекомендуется)',            // tunnelModeAutomatic
+    tunnelCompareDisclosure: 'Чем отличаются режимы',                // tunnelCompareDisclosure
+    settingsSectionOnOpen: 'При открытии приложения',                // settingsSectionOnOpen
+    autoConnectOnLaunchLabel: 'Авто-подключение при запуске',        // autoConnectOnLaunchLabel
+    settingsRefreshOnEntryToggle: 'Проверять при открытии',          // settingsRefreshOnEntryToggle
+    settingsSectionStayConnected: 'Удержание подключения',           // settingsSectionStayConnected
+    settingsBackgroundLabel: 'Работать в фоне',                      // settingsBackgroundLabel
+    appearanceLabel: 'Оформление',                                   // appearanceLabel
+    languageLabel: 'Язык',                                           // languageLabel
+    languageValue: 'Русский',                                        // AppLocale.displayName
+    themeLabel: 'Тема',                                              // themeLabel
+    appearanceSystem: 'Системное',                                   // appearanceSystem
+    maskIPsLabel: 'Скрывать IP-адреса',                              // maskIPsLabel
+    settingsSectionAbout: 'О приложении',                            // settingsSectionAbout
+    settingsSectionUpdates: 'Обновление приложения',                 // settingsSectionUpdates
+    settingsUpdateCheckOn: 'Проверка раз в сутки',                   // settingsUpdateCheckOn
+    settingsViewLogsRow: 'Смотреть все логи',                        // settingsViewLogsRow
+    settingsAdvancedRow: 'Дополнительно',                            // settingsAdvancedRow
+    resetSettingsAction: 'Сбросить все настройки',                   // resetSettingsAction
+    footer: 'Макет интерфейса · демонстрационные данные · не скриншот сборки iOS',
+  },
+  en: {
+    tagline: 'Your iPhone. Your server. Your connection.',
+    tabConnections: 'Connections',
+    tabServers: 'Servers',
+    tabSettings: 'Settings',
+    stateConnected: 'Connected',
+    evidence: 'Amsterdam, NL · just now',
+    actionDisconnect: 'Disconnect',
+    heroScopeProxy: 'SOCKS5 · port 8808',
+    connectListOtherHeader: 'Switch protocol',
+    healthChipNever: 'not checked',
+    healthVerified: 'Working',
+    verifiedHint1: 'Verified just now · 32 ms',
+    verifiedHint2: 'Verified just now · 41 ms',
+    diagnosticsTitle: 'Diagnostics',
+    ipCheckTitle: 'IP check',
+    machineLine: 'Disk 3.3/8.0G · RAM 0.4/1.9G · up 13:45',
+    vpsTitleRunning: 'Running',
+    serverHeadline: '2 of 2 protocols verified just now',
+    protocolsSectionHeader: 'Protocols',
+    addProtocolAction: 'Add protocol',
+    actionStop: 'Stop server',
+    logsTitle: 'Logs',
+    vpsManageServer: 'Manage server',
+    configModeSectionHeader: 'Tunnel mode',
+    tunnelModeAutomatic: 'Automatic (recommended)',
+    tunnelCompareDisclosure: 'How the two modes differ',
+    settingsSectionOnOpen: 'When the app opens',
+    autoConnectOnLaunchLabel: 'Auto-connect on launch',
+    settingsRefreshOnEntryToggle: 'Check on opening',
+    settingsSectionStayConnected: 'Staying connected',
+    settingsBackgroundLabel: 'Keep running in background',
+    appearanceLabel: 'Appearance',
+    languageLabel: 'Language',
+    languageValue: 'English',
+    themeLabel: 'Theme',
+    appearanceSystem: 'System',
+    maskIPsLabel: 'Hide IP addresses',
+    settingsSectionAbout: 'About',
+    settingsSectionUpdates: 'App update',
+    settingsUpdateCheckOn: 'Checked once a day',
+    settingsViewLogsRow: 'View all logs',
+    settingsAdvancedRow: 'Advanced',
+    resetSettingsAction: 'Reset all settings',
+    footer: 'Interface mockup · demo data · not a screenshot of an iOS build',
+  },
+};
+const lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'ru';
+document.documentElement.lang = lang;
+const T = STRINGS[lang];
+for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t] ?? '';
+document.fonts.ready.then(() => {
+  // t = 7.5 s of the study: the wall is breached and the beam runs green past it —
+  // the picture the app shows during the ~3.6 s breach right after «Connected».
+  renderHeroScene(document.getElementById('pic'), { time: 7.5, intensity: .6, bg: '#0B0C0F', zoom: 1.2 });
+  document.body.dataset.ready = '1';
+});
+</script>
+</body>
+</html>

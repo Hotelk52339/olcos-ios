@@ -28,6 +28,8 @@ final class TelemostRenewalAudit480Tests: XCTestCase {
         var records: [ConnectionRecord]
         var host: ServerHost
         var hasTarget = true
+        /// A saved server links the record (weaker than `hasTarget`).
+        var isLinked = true
         var engaged: ConnectionRecord?
         var connectedProxy = false
         var activity: Date?
@@ -83,6 +85,7 @@ final class TelemostRenewalAudit480Tests: XCTestCase {
                     return .init(host: self.host, secret: .password("test-only"),
                                  container: self.host.lastContainerName ?? "")
                 },
+                isLinked: { _ in self.isLinked },
                 engagedRecord: { self.engaged },
                 isConnectedProxy: { self.connectedProxy },
                 lastActivity: { self.activity },
@@ -226,17 +229,44 @@ final class TelemostRenewalAudit480Tests: XCTestCase {
         XCTAssertNotNil(f.params.roomCreatedAt)
     }
 
-    func testMissingSetupIsExplainedForKnownAndUnknownAges() async {
-        let ages: [Double?] = [nil, 20]
+    /// A record no saved server links to came from another device (QR / share).
+    /// Its room is renewed by that server's owner; this phone stays silent
+    /// instead of demanding a setup it cannot perform.
+    func testUnlinkedRecordIsNeverNaggedAboutSetup() async {
+        let ages: [Double?] = [nil, 20, 30]
         for age in ages {
             let f = Fixture(ageHours: age)
             f.hasTarget = false
+            f.isLinked = false
             let coordinator = f.makeCoordinator()
             await coordinator.checkNow()
-            XCTAssertEqual(coordinator.warning?.reason, .setupRequired)
-            XCTAssertEqual(coordinator.warning?.canRenew, false)
+            XCTAssertNil(coordinator.warning, "age \(String(describing: age))")
             XCTAssertEqual(f.creations, 0)
             XCTAssertEqual(f.claims, 0)
+        }
+    }
+
+    /// With a linked server but no Yandex session, setup IS the user's to do.
+    func testLinkedRecordWithoutSessionStillExplainsSetup() async {
+        let f = Fixture(ageHours: nil)
+        f.hasSession = false
+        let coordinator = f.makeCoordinator()
+        await coordinator.checkNow()
+        XCTAssertEqual(coordinator.warning?.reason, .setupRequired)
+        XCTAssertEqual(coordinator.warning?.canRenew, false)
+    }
+
+    /// Linked, but the server's SSH secret / trust is unusable: still the
+    /// user's problem, so the notice stays.
+    func testLinkedRecordWithUnusableTargetStillExplainsSetup() async {
+        for age: Double? in [nil, 20] {
+            let f = Fixture(ageHours: age)
+            f.hasTarget = false
+            f.isLinked = true
+            let coordinator = f.makeCoordinator()
+            await coordinator.checkNow()
+            XCTAssertEqual(coordinator.warning?.reason, .setupRequired, "age \(String(describing: age))")
+            XCTAssertEqual(f.creations, 0)
         }
     }
 

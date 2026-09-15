@@ -40,7 +40,7 @@ final class Review470ServersTests: XCTestCase {
     }
 
     private func host(primary: ConnectionRecord?, extras: [ConnectionRecord]) -> ServerHost {
-        var h = ServerHost(label: "zaza", host: "1.2.3.4")
+        var h = ServerHost(label: "ams-1", host: "1.2.3.4")
         h.lastContainerName  = "olcrtc-server-abc"
         h.lastConnectionID   = primary?.id
         h.extraConnectionIDs = extras.isEmpty ? nil : extras.map(\.id)
@@ -149,16 +149,16 @@ final class Review470ServersTests: XCTestCase {
     // MARK: #470 record names are locale-stable
 
     func testRecordNameCarriesTheRawCarrierIdInEveryLanguage() {
-        let h = ServerHost(label: "zaza", host: "1.2.3.4")
+        let h = ServerHost(label: "ams-1", host: "1.2.3.4")
         for lang in ["ru", "en"] {
             SettingsStore.shared.language = lang
             let name = ServersView.recordName(host: h, carrier: "telemost", multi: true)
-            XCTAssertEqual(name, "zaza · telemost", "language \(lang)")
+            XCTAssertEqual(name, "ams-1 · telemost", "language \(lang)")
             XCTAssertFalse(name.contains(CarrierTransportMatrix.carrierLabel("telemost")),
                            "the localized label must never be persisted (language \(lang))")
             // …and the Connect tab strips it back to the host label under either language.
-            XCTAssertEqual(ConnectionNaming.stripCarrierSuffix(name: name, carrier: "telemost"), "zaza")
+            XCTAssertEqual(ConnectionNaming.stripCarrierSuffix(name: name, carrier: "telemost"), "ams-1")
         }
-        XCTAssertEqual(ServersView.recordName(host: h, carrier: "telemost", multi: false), "zaza")
+        XCTAssertEqual(ServersView.recordName(host: h, carrier: "telemost", multi: false), "ams-1")
     }
 }

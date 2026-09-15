@@ -27,6 +27,25 @@ import XCTest
 
 final class TelemostRoomIDTests: XCTestCase {
 
+    // MARK: normalizedRoomInput — what the user typed → the server's room.id
+
+    func testNormalizedInputAcceptsLinkGroupedDigitsAndBareID() {
+        XCTAssertEqual(TelemostRoomService.normalizedRoomInput("https://telemost.yandex.ru/j/1234567890"),
+                       "1234567890")
+        XCTAssertEqual(TelemostRoomService.normalizedRoomInput(" telemost.yandex.ru/j/1234567890?utm=x\n"),
+                       "1234567890")
+        // Telemost shows ids with grouping spaces; the API form has none.
+        XCTAssertEqual(TelemostRoomService.normalizedRoomInput("1234 5678 90"), "1234567890")
+        XCTAssertEqual(TelemostRoomService.normalizedRoomInput("1234567890"), "1234567890")
+    }
+
+    func testNormalizedInputLeavesUnrecognisedTextForValidation() {
+        // Not a Telemost link and not an id: whitespace goes, nothing is invented.
+        XCTAssertEqual(TelemostRoomService.normalizedRoomInput("https://example.org/room x"),
+                       "https://example.org/roomx")
+        XCTAssertEqual(TelemostRoomService.normalizedRoomInput(""), "")
+    }
+
     func testCanonicalURIYieldsBareID() {
         XCTAssertEqual(
             TelemostRoomService.roomID(fromURI: "https://telemost.yandex.ru/j/1234567890"),

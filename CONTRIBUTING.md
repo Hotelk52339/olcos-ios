@@ -26,7 +26,9 @@ English is preferred for identifiers, engineering comments and commit messages.
 Russian, English and French are welcome in issues; the README offers separate
 Russian and English editions through an upfront language selector.
 User-facing text belongs in the localization system, with matching RU/EN/FR
-entries and format placeholders, not hardcoded strings.
+entries and format placeholders, not hardcoded strings. Add or change strings
+with `python3 scripts/dev/l10n.py add|set|remove KEY --en … --ru … --fr …` and
+run `python3 scripts/dev/l10n.py check` before committing.
 The extension has separate localized resources. [Localization implementation](App/Localization/L10n.swift) ·
 [project resources](project.yml).
 
@@ -71,7 +73,7 @@ step or claim the first connection was independently verified.
 Do not hand-edit generated artifacts to mask a source problem.
 [Project](project.yml) · [build script](scripts/build-framework.sh).
 
-Release identity for olcOS 1.0 is version `1.0`, build `1`, tag `v1.0.1`.
+Release identity for olcOS 2.0 is version `2.0`, build `2`, tag `v2.0.2`.
 The release owner coordinates subsequent build/version changes; contributors
 should not race the build counter or bump it for each pull request.
 Preserve bundle IDs, storage keys and URI compatibility.
@@ -109,8 +111,9 @@ For UI changes, label concepts as concepts and actual screenshots with the
 device/simulator, OS and build used.
 
 Review RU/EN/FR, VoiceOver/Dynamic Type as applicable, Reduce Motion and both
-light/dark appearances when altering the interface. Keep the waveform decorative:
-no invented packet rates, speed results or continuously firing haptics.
+light/dark appearances when altering the interface. Keep the hero picture (beam
+and stone wall) free of invented telemetry: it may follow measured throughput,
+but no invented packet rates, printed speed results or continuously firing haptics.
 [Motion and haptic policy](App/Views/SignalWaveform.swift).
 
 ## Keep reports safe and preserve attribution

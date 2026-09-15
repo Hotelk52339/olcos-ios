@@ -23,7 +23,9 @@ import SwiftUI
 struct AddServerHostView: View {
     var existing: ServerHost? = nil
     var existingPassword: String? = nil          // pre-fill on edit; nil for add-new flow
-    // #451: key-mode prefill on edit — the stored key text + passphrase.
+    /// Edit mode: the stored key + passphrase. The key TEXT is never shown or
+    /// placed in an editable field — it is only classified (type / encrypted)
+    /// and re-saved unchanged unless the user replaces it.
     var existingKey: String? = nil
     var existingPassphrase: String? = nil
     // #295: every other host's label, for uniqueness validation. The label
@@ -45,6 +47,9 @@ struct AddServerHostView: View {
     @State private var privateKey = ""
     @State private var keyPassphrase = ""
     @State private var keyDetection: SSHKeyAnalyzer.Detection? = nil
+    /// Edit mode: the Keychain key is kept as-is; the editor is hidden until
+    /// "Replace key" is tapped.
+    @State private var storedKeyKept = false
 
     @FocusState private var portFocused: Bool
 
@@ -70,6 +75,7 @@ struct AddServerHostView: View {
     /// passphrase has been entered (an encrypted key without one would only
     /// fail later at connect time).
     private var keyOK: Bool {
+        if storedKeyKept { return true }
         guard let d = keyDetection, d.isSupported else { return false }
         return !d.isEncrypted || !keyPassphrase.isEmpty
     }
@@ -224,36 +230,71 @@ struct AddServerHostView: View {
 
     @ViewBuilder
     private var keyEditor: some View {
-        // Paste target for the OpenSSH key file contents. TextEditor (not
-        // SecureField): the armor is multi-line, and seeing the BEGIN/END
-        // lines is exactly how users verify they pasted the right thing.
-        TextEditor(text: $privateKey)
-            // #471: B9 — key armor is measured data (step 6); `.footnote` is not
-            // a step. #471 was: .font(.system(.footnote, design: .monospaced))
-            .font(Theme.Typography.mono)
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
-            .frame(minHeight: 110)
-            .accessibilityLabel(L10n.authMethodKey.localized())
-            .onChange(of: privateKey) { _, newValue in
-                revalidateKey(newValue)
+        if storedKeyKept {
+            storedKeyRow
+        } else {
+            // Paste target for the OpenSSH key file contents. TextEditor (not
+            // SecureField): the armor is multi-line, and seeing the BEGIN/END
+            // lines is how users verify they pasted the right thing. It is
+            // only ever filled by the user — never prefilled from the Keychain.
+            TextEditor(text: $privateKey)
+                .font(Theme.Typography.mono)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .frame(minHeight: Theme.Metrics.s8 * 3)
+                .accessibilityLabel(L10n.authMethodKey.localized())
+                .onChange(of: privateKey) { _, newValue in
+                    revalidateKey(newValue)
+                }
+            Button {
+                if let s = UIPasteboard.general.string {
+                    privateKey = s   // onChange revalidates
+                }
+            } label: {
+                Label(L10n.sshKeyPasteButton.localized(), systemImage: "doc.on.clipboard")
             }
-        Button {
-            if let s = UIPasteboard.general.string {
-                privateKey = s   // onChange revalidates
+            if let status = keyStatus {
+                Text(status.text)
+                    .font(Theme.Typography.caption)
+                    .foregroundStyle(status.ok ? Theme.Palette.textSecondary : Theme.Palette.red)
             }
-        } label: {
-            Label(L10n.sshKeyPasteButton.localized(), systemImage: "doc.on.clipboard")
+            // Passphrase — revealed only when the pasted key is encrypted.
+            if keyDetection?.isEncrypted == true {
+                FormField(label: L10n.sshKeyPassphraseField.localized(), placeholder: "•••",
+                          text: $keyPassphrase, secure: true)
+            }
         }
-        if let status = keyStatus {
-            Text(status.text)
-                .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption)
-                .foregroundStyle(status.ok ? Theme.Palette.green : Theme.Palette.red)
+    }
+
+    /// Edit mode: "ed25519 key stored in Keychain" + Replace. The stored text
+    /// stays in the Keychain; only its type is shown.
+    private var storedKeyRow: some View {
+        HStack(alignment: .center, spacing: Theme.Metrics.s3) {
+            Image(systemName: "key.fill")
+                .foregroundStyle(Theme.Palette.textSecondary)
+                .accessibilityHidden(true)
+            Text(L10n.sshKeyStored_fmt.formatted(Self.keyTypeName(keyDetection)))
+                .font(Theme.Typography.body)
+                .foregroundStyle(Theme.Palette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: Theme.Metrics.s2)
+            Button(L10n.sshKeyReplaceAction.localized()) {
+                storedKeyKept = false
+                privateKey = ""
+                keyPassphrase = ""
+                keyDetection = nil
+            }
+            .font(Theme.Typography.label)
         }
-        // Passphrase — revealed only when the pasted key is encrypted.
-        if keyDetection?.isEncrypted == true {
-            FormField(label: L10n.sshKeyPassphraseField.localized(), placeholder: "•••",
-                      text: $keyPassphrase, secure: true)
+        .frame(minHeight: Theme.Metrics.controlHeight)
+    }
+
+    /// Display name of a stored key's type ("ed25519" / "RSA" / "SSH").
+    static func keyTypeName(_ detection: SSHKeyAnalyzer.Detection?) -> String {
+        switch detection {
+        case .ed25519: return "ed25519"
+        case .rsa:     return "RSA"
+        default:       return "SSH"
         }
     }
 
@@ -313,10 +354,18 @@ struct AddServerHostView: View {
         h.authMethod = authMethod   // #451: nil only for pre-#451 stored hosts
         // Trust belongs to the SSH backend. Editing credentials or a label
         // must never clear or replace the remembered server key.
-        let secret: SSHSecret = authMethod == .privateKey
-            ? .privateKey(text: privateKey,
-                          passphrase: keyPassphrase.isEmpty ? nil : keyPassphrase)
-            : .password(password)
+        let secret: SSHSecret
+        switch authMethod {
+        case .privateKey where storedKeyKept:
+            // Unchanged key: re-save exactly what the Keychain holds.
+            secret = .privateKey(text: existingKey ?? "",
+                                 passphrase: (existingPassphrase?.isEmpty == false) ? existingPassphrase : nil)
+        case .privateKey:
+            secret = .privateKey(text: privateKey,
+                                 passphrase: keyPassphrase.isEmpty ? nil : keyPassphrase)
+        case .password:
+            secret = .password(password)
+        }
         onSave(h, secret)
         dismiss()
     }
@@ -328,13 +377,13 @@ struct AddServerHostView: View {
         port     = String(h.port)
         username = h.username
         authMethod = h.authMethod ?? .password
-        // Credentials are fetched from Keychain by the caller and passed in;
-        // leave the fields empty if they weren't available.
+        // Credentials are fetched from the Keychain by the caller. The password
+        // prefills its secure field; the private key is NEVER put into a text
+        // field — it is classified for the "stored in Keychain" row and kept.
         if let pw = existingPassword { password = pw }
-        if let key = existingKey {
-            privateKey = key
-            revalidateKey(key)
+        if let key = existingKey, !key.isEmpty {
+            keyDetection = SSHKeyAnalyzer.detect(key)
+            storedKeyKept = true
         }
-        if let pp = existingPassphrase { keyPassphrase = pp }
     }
 }

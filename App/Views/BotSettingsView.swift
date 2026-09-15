@@ -1,9 +1,6 @@
 import SwiftUI
 
-// #491: native Signal form grouping. Detection/deployment/removal and secret guards are unchanged.
-// #491 was: custom card-like buttons and compressed horizontal status controls inside Form.
-
-// MARK: - BotSettingsView (#419)
+// MARK: - BotSettingsView
 //
 // Per-server bot sheet — one bot per server. The user picks a bot from the
 // Settings registry (`BotStore`), sets the start/stop commands + replies, then
@@ -14,8 +11,7 @@ struct BotSettingsView: View {
     let host: ServerHost
     @ObservedObject var botStore: BotStore
     @ObservedObject var provisioner: Provisioner
-    /// #451 was: `let password: String?` — the sheet now receives the host's
-    /// full SSHSecret (password or private key) from ServersView.
+    /// The host's SSH secret (password or private key), supplied by the caller.
     let secret: SSHSecret?
 
     @Environment(\.dismiss) private var dismiss
@@ -52,7 +48,7 @@ struct BotSettingsView: View {
                     actionsSection
                 }
             }
-            .signalFormChrome() // #491
+            .signalFormChrome()
             .navigationTitle(L10n.botSheetTitle.localized())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -65,7 +61,7 @@ struct BotSettingsView: View {
             .task {
                 guard !didInitialCheck else { return }
                 didInitialCheck = true
-                // #425: only auto-detect when there's something to detect with —
+
                 // stored credentials and at least one configured bot. Otherwise just
                 // show the state (no SSH round-trip, no credentials alert on open).
                 guard secret != nil, !botStore.bots.isEmpty else { return }
@@ -89,23 +85,18 @@ struct BotSettingsView: View {
 
     private var emptyRegistrySection: some View {
         Section {
-            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {   // #471: B9 — 6 → s2
-                // #471: B9 — the empty state's subject is step 2 (`title`), its
-                // sentence step 5. #471 was: .font(.headline) / .font(.caption)
+            VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
                 Text(L10n.botNoBotsTitle.localized()).font(Theme.Typography.title)
                 Text(L10n.botNoBotsHint.localized())
                     .font(Theme.Typography.caption).foregroundStyle(Theme.Palette.textSecondary)
             }
         }
-        .signalFormRows() // #491
+        .signalFormRows()
     }
 
     private var statusSection: some View {
         Section {
-            // #428: status and the Check button share one row (was a status row
-            // above a full-width Check button). The button's own spinner covers
-            // the busy state, so the separate ProgressView is gone.
-            // boc #491: status reads in its own row; Check stays a native action.
+            // The button's own spinner covers the busy state.
             Text(statusLabel).foregroundStyle(statusTone)
             Button {
                 Task { await check() }
@@ -117,19 +108,16 @@ struct BotSettingsView: View {
                 }
             }
             .disabled(!canOperate)
-            // eoc #491
             if let d = deployed, !botStore.bots.contains(where: { $0.name == d.marker }) {
                 Text(L10n.botUnknownFound_fmt.formatted(d.marker))
-                    .font(Theme.Typography.caption).foregroundStyle(Theme.Palette.orange)   // #471: B9
+                    .font(Theme.Typography.caption).foregroundStyle(Theme.Palette.orange)
             }
         } header: {
-            SignalSectionHeader(L10n.botSheetTitle.localized()) // #491
+            SignalSectionHeader(L10n.botSheetTitle.localized())
         } footer: {
-            // #471: B9 — a Form footer already renders at the caption step;
-            // `.caption2` only pushed it BELOW the scale. was: .font(.caption2)
             Text(L10n.botSheetFooter.localized())
         }
-        .signalFormRows() // #491
+        .signalFormRows()
     }
 
     private var botSection: some View {
@@ -149,7 +137,7 @@ struct BotSettingsView: View {
                     Spacer()
                     Text(bot.platform.title).foregroundStyle(Theme.Palette.textSecondary)
                 }
-                // #428: token is read-only here — only its status shows (the token
+
                 // itself is entered in Settings → Bots). was: a token hint line.
                 HStack {
                     Text(L10n.botTokenLabel.localized())
@@ -161,11 +149,9 @@ struct BotSettingsView: View {
                 }
             }
         } footer: {
-            // #428: point the user to where the token lives (it's not editable here).
-            // #471: B9 — a Form footer is already a caption. was: .font(.caption2)
             Text(L10n.botTokenManageHint.localized())
         }
-        .signalFormRows() // #491
+        .signalFormRows()
     }
 
     private var commandsSection: some View {
@@ -173,9 +159,9 @@ struct BotSettingsView: View {
             labeledField(L10n.botStartCmdLabel.localized(), text: $startCmd)
             labeledField(L10n.botStopCmdLabel.localized(),  text: $stopCmd)
         } header: {
-            SignalSectionHeader(L10n.botCommandsHeader.localized()) // #491
+            SignalSectionHeader(L10n.botCommandsHeader.localized())
         }
-        .signalFormRows() // #491
+        .signalFormRows()
     }
 
     private var repliesSection: some View {
@@ -184,12 +170,11 @@ struct BotSettingsView: View {
             labeledField(L10n.botStopReplyLabel.localized(),    text: $stopReply)
             labeledField(L10n.botUnknownReplyLabel.localized(), text: $unknownReply)
         } header: {
-            SignalSectionHeader(L10n.botRepliesHeader.localized()) // #491
+            SignalSectionHeader(L10n.botRepliesHeader.localized())
         }
-        .signalFormRows() // #491
+        .signalFormRows()
     }
 
-    // boc #491: standard native action rows, with existing operation guards.
     private var actionsSection: some View {
         Section {
             if isEditing {
@@ -223,14 +208,13 @@ struct BotSettingsView: View {
         }
         .signalFormRows()
     }
-    // eoc #491
 
     @ViewBuilder
     private func labeledField(_ label: String, text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Metrics.s1) {   // #471: B9 — 2 → s1
-            Text(label).font(Theme.Typography.caption).foregroundStyle(Theme.Palette.textSecondary) // #491   // #471: B9
+        VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
+            Text(label).font(Theme.Typography.caption).foregroundStyle(Theme.Palette.textSecondary)
             TextField("", text: text)
-                .accessibilityLabel(label) // #491: VoiceOver names the empty editor.
+                .accessibilityLabel(label)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .disabled(!isEditing)
@@ -261,7 +245,7 @@ struct BotSettingsView: View {
         }
     }
 
-    /// #451: method-appropriate "credential missing" message.
+    /// Method-appropriate "credential missing" message.
     private var missingCredentialText: String {
         host.authMethod == .privateKey
             ? L10n.alertKeyMissingShort.localized()
@@ -306,7 +290,7 @@ struct BotSettingsView: View {
             try await provisioner.deployBot(on: host, secret: secret, config: config)
             let found = try await provisioner.checkBots(on: host, secret: secret, markers: botStore.markers)
             applyFound(found.first { $0.marker == bot.name } ?? found.first)
-            Haptics.success()   // #455: a satisfying confirmation the deploy landed
+            Haptics.success()
         } catch {
             errorText = error.localizedDescription
         }
@@ -318,7 +302,7 @@ struct BotSettingsView: View {
         do {
             try await provisioner.removeBot(on: host, secret: secret, marker: d.marker)
             applyFound(nil)
-            Haptics.warning()   // #455: a firmer buzz for a completed destructive op
+            Haptics.warning()
         } catch {
             errorText = error.localizedDescription
         }

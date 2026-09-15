@@ -7,7 +7,7 @@ Code and executable tests take precedence over historical comments.
 ## Identity and compatibility
 
 - Public brand: **olcOS**. Repository: `Hotelk52339/olcos-ios`.
-- Release identity: marketing version `1.0`, build `1`, tag `v1.0.1`.
+- Release identity: marketing version `2.0`, build `2`, tag `v2.0.2`.
   Version changes belong to the release owner; do not bump per contribution.
 - Preserve bundle IDs and storage keys as well as URI compatibility.
 - Preserve technical targets/schemes/modules `olcrtc-ios`, `olcrtc-ios-tests`
@@ -67,17 +67,27 @@ Code and executable tests take precedence over historical comments.
 - Persist first-use trust before accepting the key. Trust belongs to the
   endpoint, not a model UUID; removing/recreating a host is not a trust reset.
   Trust-store read/write failures stop the connection rather than accepting
-  an unrecorded key. [SSH trust implementation](App/Core/SSHHostKeyVerification.swift).
+  an unrecorded key. [Trust store](App/Core/SSHHostKeyTrustStore.swift) ·
+  [verification helpers](App/Core/SSHHostKeyVerification.swift).
 - Keep connection and SSH secrets out of UserDefaults, logs, fixtures and
   public reports. Do not claim VPN secrets never enter system preferences;
   cleanup can fail. Preserve unreadable saved data during recovery.
   [Secret store](App/Security/ConnectionSecretStore.swift) ·
   [connection store](App/Core/ConnectionStore.swift) · [security policy](SECURITY.md).
 - Keep `L10n` keys, formatting placeholders and RU/EN/FR translations aligned,
-  including extension resources. Decorative waveform motion is active/visible/
-  connected-only, respects Reduce Motion and is never a traffic metric.
-  Haptics must not repeat on automatic recovery or foreground adoption.
-  [Localization](App/Localization/L10n.swift) · [interaction policy](App/Views/SignalWaveform.swift).
+  including extension resources; edit strings with `scripts/dev/l10n.py` and
+  run `python3 scripts/dev/l10n.py check`. The hero picture (a beam meeting a
+  stone masonry firewall wall, `FirewallBeamModel`) follows MEASURED tunnel throughput
+  (exact packet-path byte counters from the provider in VPN mode; a labelled
+  loopback-interface approximation in SOCKS5 mode): particle density and pace
+  come from `SignalMotionPolicy.intensity`. A continuous frame clock runs only
+  while connected or connecting, visible and in the foreground; idle and error
+  settle on a finite schedule and hold a static frame; Reduce Motion is always
+  static. It prints no numbers (the rate is spoken to VoiceOver only) and is never a
+  health verdict or an invented number. Haptics must not repeat on automatic
+  recovery or foreground adoption.
+  [Localization](App/Localization/L10n.swift) · [motion policy](App/Views/SignalWaveform.swift) ·
+  [throughput source](App/Services/TunnelThroughput.swift).
 
 ## Verification contract
 

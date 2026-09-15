@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Download a matching, checksummed olcOS framework without rebuilding it.
-# Usage: ./scripts/fetch-framework.sh [v1.0.1]
+# Usage: ./scripts/fetch-framework.sh [v2.0.2]
 # GH_REPO=owner/repo overrides the public olcOS release repository.
 # --cache-key prints the source fingerprint used by BOTH CI and release.
 set -euo pipefail

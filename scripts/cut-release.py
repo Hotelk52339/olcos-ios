@@ -5,8 +5,8 @@ This helper never edits files, creates tags, pushes, or reads a private ledger.
 Version/build are authoritative in project.yml; optional explicit values must
 match. The maintainer owns tagging/publishing after reviewing macOS CI.
 
-  python3 scripts/cut-release.py --version 1.0 --build 1 --dry-run
-  python3 scripts/cut-release.py --check-tag v1.0.1
+  python3 scripts/cut-release.py --version 2.0 --build 2 --dry-run
+  python3 scripts/cut-release.py --check-tag v2.0.2
   python3 scripts/cut-release.py --check-bundle build/device/Build/Products/Release-iphoneos/olcrtc-ios.app
 """
 

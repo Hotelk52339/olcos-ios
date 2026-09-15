@@ -303,6 +303,20 @@ final class HealthModelTests: XCTestCase {
         XCTAssertFalse(HealthReason.keyMismatch.message.isEmpty)
     }
 
+    func testMapperHandshakeTimeoutIsNoAnswerNotKeyMismatch() {
+        // A shared connection on a second phone: the hello went out, nobody
+        // answered within the handshake deadline. The server log showed no
+        // session from that phone, so "key no longer matches" was a false claim.
+        for raw in ["handshake client: read welcome: i/o timeout",
+                    "run public client: handshake client: context deadline exceeded",
+                    "handshake client: read welcome: read hdr: timeout"] {
+            XCTAssertEqual(HealthFailureMapper.reason(forRaw: raw), .noPeer, raw)
+        }
+        // A real decrypt failure still resolves to the key.
+        XCTAssertEqual(HealthFailureMapper.reason(forRaw: "handshake client: read welcome: EOF"), .keyMismatch)
+        XCTAssertEqual(HealthFailureMapper.reason(forRaw: "handshake challenge mismatch"), .keyMismatch)
+    }
+
     func testMapperOrderIsFirstMatchWins() {
         // "readiness timed out" must be .noPeer, NOT the generic .timedOut.
         XCTAssertEqual(HealthFailureMapper.reason(forRaw: "olcRTC runtime readiness timed out"), .noPeer)

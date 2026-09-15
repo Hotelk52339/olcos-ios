@@ -297,6 +297,22 @@ enum TelemostRoomService {
         return component
     }
 
+    /// What the user typed or pasted for a Telemost room → the bare room id the
+    /// server expects in `room.id` (upstream docs/configuration: "create the
+    /// room on the service site and paste it into room.id").
+    ///
+    /// Accepts the full invite link (`https://telemost.yandex.ru/j/3528…`),
+    /// the link without a scheme, or the id as Telemost shows it with grouping
+    /// spaces ("3528 5410 1234"). This matters beyond cosmetics: vp8channel
+    /// stamps every frame with a token hashed from the room STRING
+    /// (`common.BindingToken(channelID, roomURL)`), so a client holding the
+    /// URL and a server holding the id silently drop each other's frames and
+    /// the handshake times out — which the app used to report as a bad key.
+    static func normalizedRoomInput(_ raw: String) -> String {
+        if let fromLink = roomID(fromURI: raw) { return fromLink }
+        return raw.components(separatedBy: .whitespacesAndNewlines).joined()
+    }
+
     /// `A-Z a-z 0-9 - _`, written with the same `isASCII && (isLetter || isNumber)`
     /// idiom as `ServerHost.sanitizeLogFilePrefix` so non-ASCII look-alikes
     /// (Cyrillic "о", full-width digits) are rejected rather than folded.

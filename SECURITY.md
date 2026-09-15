@@ -12,7 +12,7 @@ credentials or substitute a public issue.
 
 Include:
 
-- Affected version **and build** (for example `1.0 (1)`), iOS version,
+- Affected version **and build** (for example `2.0 (2)`), iOS version,
   device class, installation/signing method and actual backend.
 - Impact, prerequisites and minimal steps using synthetic/test data.
 - Carrier/transport and relevant network conditions, without real IPs,
@@ -28,7 +28,7 @@ SLA is promised.
 
 ## Scope and supported line
 
-This policy covers the **olcOS 1.0 iOS codebase**, including app integration,
+This policy covers the **olcOS 2.0 iOS codebase**, including app integration,
 the packet-tunnel extension, local proxy, SSH provisioning, imports, storage
 and diagnostic exports. [Project](project.yml) · [architecture](docs/architecture.md).
 No security-maintenance commitment is made here for older builds or planned
@@ -61,7 +61,8 @@ server rebuild or key rotation requires explicit confirmation to reset saved
 trust before reconnecting; the next connection establishes trust again.
 Unexpected changes should not be dismissed, and keys are never silently
 replaced during a retry. [Host-key policy](App/Core/SSHHostKeyVerification.swift) ·
-[reset interface](App/Views/AddServerHostView.swift).
+[reset interface](App/Views/ServerAdvancedView.swift) (shown on “Manage server”
+only after a mismatch) · [trust store](App/Core/SSHHostKeyTrustStore.swift).
 
 The SSH route can retry directly when a relay is unavailable: **SSH management
 is not guaranteed to remain inside olcOS**, although the same host-key
@@ -122,8 +123,9 @@ before sharing; remove real IPs, full URIs, QR codes, credentials, room IDs,
 subscription tokens and identifying account data.
 [LogStore](App/Services/LogStore.swift) · [LogExport](App/Services/LogExport.swift).
 
-The decorative waveform is not evidence that packets are flowing, a speed
-measurement or a security indicator. Use actual diagnostic results with their
+The hero picture (beam and stone wall) is not evidence that packets are
+flowing, a speed measurement or a security indicator, even though its pace
+follows measured tunnel throughput. Use actual diagnostic results with their
 route and timestamp, and do not infer universal connectivity from one success.
 [Motion policy](App/Views/SignalWaveform.swift) · [diagnostics](docs/diagnostic-messages.md).
 

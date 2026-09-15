@@ -339,7 +339,7 @@ final class SettingsStoreTests: XCTestCase {
         s.containerLogsTailLines = 2000
         s.keepAliveSeconds       = 300
         s.tunnelMode             = .vpn   // #vpn: non-numeric, but reset() covers it too
-        s.autoFailover           = false  // #455: default is now true — mutate away so reset() is proven to restore it
+        s.autoFailover           = true   // default is false — mutate away so reset() is proven to restore it
         s.refreshOnEntry         = false  // #458: default true — mutate away so reset() is proven to restore it
         // #470: the fontSizeIndex assertion below compared the untouched value
         // (the default on any fresh install) to the default — it could not fail.
@@ -359,7 +359,7 @@ final class SettingsStoreTests: XCTestCase {
         // #487 was: reset asserted .proxy. Auto is VPN-first until its lazy gate fails.
         XCTAssertEqual(s.connectionModePreference, .automatic)
         XCTAssertEqual(s.tunnelMode, .vpn)
-        XCTAssertEqual(s.autoFailover, SettingsStore.Defaults.autoFailover)   // #455: assert against the default (now true), not a literal
+        XCTAssertEqual(s.autoFailover, SettingsStore.Defaults.autoFailover)
         XCTAssertEqual(s.refreshOnEntry, SettingsStore.Defaults.refreshOnEntry)   // #458
         XCTAssertEqual(s.vpsAutoPingInterval, SettingsStore.Defaults.vpsAutoPingInterval)   // #470
     }

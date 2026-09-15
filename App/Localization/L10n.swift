@@ -84,17 +84,7 @@ enum L10n: String, CaseIterable {
     case vpnSettingsEntryName               // "olcOS" — shown under Settings > VPN
     case vpnCapabilityUnavailable_fmt       // %@ = system error text from saveToPreferences
 
-    // #453: auto-failover between protocols on one server
-    // #460: the control moved OFF Settings and onto the Connections screen,
-    // next to the protocols it switches between. Same stored value
-    // (`SettingsStore.autoFailover`) — only the UI moved, so these two strings
-    // moved with it and are now read by `ConnectAutoSwitchCard`.
-    case configFailoverToggle               // card title (was: settings toggle label)
-    // #460 was: `configFailoverExplainer` — a settings-page sentence ("If the
-    // active protocol stops responding, automatically switch to another
-    // protocol running on the same server."). The card gets the one-line
-    // `connectAutoSwitchHint` instead; the long form had no call site left.
-    case configFailoverProxyOnlyFooter      // note: proxy-mode only
+    // Automatic protocol failover has no UI; `SettingsStore.autoFailover` stays a stored key (default false).
     // #458: re-check servers and protocols when the app is opened
     case settingsRefreshOnEntryToggle
     case settingsRefreshOnEntryExplainer
@@ -113,7 +103,6 @@ enum L10n: String, CaseIterable {
     // (findings 2 / 15). It is now `diagResponseLabel` + `diagResponseNote`.
     case healthLatencyMs_fmt                // "%d ms"
     // #455: premium redesign — editorial-consistency additions
-    case carrierChoiceFooter                // install/reconfigure carrier guidance footer
     // #460 was: `configReliabilityHeader` ("Reliability") — the Settings
     // section it headed held only the auto-switch toggle, which moved to the
     // Connections screen, so the header lost its section and its last use.
@@ -163,7 +152,7 @@ enum L10n: String, CaseIterable {
     // MARK: AddConnectionView
     case newConnectionTitle, editConnectionTitle
     case nameField, namePlaceholder         // "Label" / "My server"
-    case groupField, groupDefault           // "Group" / "Servers"
+    case groupDefault           // "Group" / "Servers"
     case importByURI                        // "Import from URI"
     case scanQRAction                       // "Scan QR" (#258 sheet shortcut)
     case pasteURIAction                     // "Paste URI" (#258 sheet shortcut)
@@ -532,7 +521,6 @@ enum L10n: String, CaseIterable {
     case alertKeyMissingShort               // #451: "SSH key not found" — key-auth hosts
     // #451: full-access sharing is disabled for key-auth hosts (the link would
     // embed the private key) — the menu item explains via this alert.
-    case shareFullAccessKeyHostUnavailable
 
     // MARK: AddServerHostView
     case nameSettingLabel                   // "Name"
@@ -716,7 +704,6 @@ enum L10n: String, CaseIterable {
     case removeProtocolAction              // "Remove from server" (row menu, destructive)
     case removeProtocolConfirmTitle_fmt    // "Remove %@ from this server?"
     case removeProtocolConfirmBody         // container + config removed; connection too
-    case protocolConnectAction             // "Connect via this protocol" (row menu)
     // #460 (findings 7 / 16) was: `protocolConnectedBadge` ("Connected" /
     // «Подключено») — the longest word on the protocol row's title line, in a
     // column too narrow for it, which SwiftUI resolved by hyphenating:
@@ -937,7 +924,6 @@ enum L10n: String, CaseIterable {
     // #460 / instruction 26: the auto-switch control moved from Settings onto
     // the Connections screen, above the protocols it switches between. Short
     // enough for a card — the long Settings sentence stayed behind.
-    case connectAutoSwitchHint
 
     // MARK: #461 Screenshot round 5 — one page, protocol first
     // A server with exactly one installed protocol produced a switcher section
@@ -1077,6 +1063,127 @@ enum L10n: String, CaseIterable {
     case sshHostKeyResetDone
     // eoc #481
     case later
+    case addFlowStepAccess
+    case addFlowStepCheck
+    case addFlowStepProtocols
+    case addFlowStepRoom
+    case addFlowStepInstall
+    case addFlowStepCounter_fmt
+    case addFlowNext
+    case addFlowBack
+    case addFlowAccessLead
+    case addFlowKeyPasted_fmt
+    case addFlowKeyReplace
+    case addFlowKeyNotShownNote
+    case addFlowClipboardEmpty
+    case addFlowLabelMissing
+    case addFlowHostInvalid
+    case addFlowPortInvalid
+    case addFlowUserMissing
+    case addFlowPasswordMissing
+    case addFlowKeyMissing
+    case addFlowPassphraseMissing
+    case addFlowCheckLead
+    case addFlowCheckRunning
+    case addFlowCheckOK
+    case addFlowCheckFailed
+    case addFlowTofuFirstTitle
+    case addFlowTofuFirstBody
+    case addFlowTofuKnownTitle
+    case addFlowTofuKnownBody
+    case addFlowTofuMismatchTitle
+    case addFlowFactOS
+    case addFlowFactArch
+    case addFlowFactRuntime
+    case addFlowFactRuntimeNone
+    case addFlowFactExisting_fmt
+    case addFlowFactExistingNone
+    case addFlowFactUnknown
+    case addFlowProtocolsLead
+    case addFlowBadgeRecommended
+    case addFlowBadgeAlternative
+    case addFlowBadgePrimary
+    case addFlowNeedsYandex
+    case addFlowTransportFor_fmt
+    case addFlowPickAtLeastOne
+    case addFlowRoomLead
+    case addFlowYandexSignInBody
+    case addFlowTelemostCreating
+    case addFlowTelemostCreated
+    case addFlowTelemostCreatedBody
+    case addFlowTelemostFailed
+    case addFlowJitsiInstance
+    case addFlowJitsiInstanceNote
+    case addFlowJitsiCustom
+    case addFlowJitsiRoomName
+    case addFlowJitsiRoomHint
+    case addFlowRoomMissing_fmt
+    case addFlowInstallLead
+    case addFlowSummaryServer
+    case addFlowSummaryProtocols
+    case addFlowInstallRunning
+    case addFlowInstallDone
+    case addFlowInstallFailed
+    case addFlowInstallFailedHint
+    case addFlowResultConnections
+    case addFlowResultPending
+    case installOptionsLead
+    case throughputKBps_fmt
+    case throughputMBps_fmt
+    case throughputA11y_fmt
+    case throughputEstimateA11y_fmt
+    case carrierJitsiDesc
+    case carrierTelemostDesc
+    case carrierWbstreamDesc
+    case transportDatachannelDesc
+    case transportVp8channelDesc
+    case transportSeichannelDesc
+    case transportVideochannelDesc
+    case vpsSnapshotRefreshing
+    case settingsCarrierEndpointsRow
+    case settingsCarrierEndpointsEmpty
+    case settingsBotsServersHeader
+    case settingsBotsServersFooter
+    case settingsConnectionSummary_fmt
+    case settingsTransportSummary_fmt
+    case settingsDiagnosticsSummary_fmt
+    case settingsConnectionsCount_fmt
+    case settingsBotsCount_fmt
+    case protocolAboutAction
+    case protocolAboutHide
+    case shareServerTitle_fmt
+    case shareServerProtocolsHeader
+    case shareServerNoProtocols
+    case shareFullAccessPasswordSub
+    case shareFullAccessKeySub
+    case shareFullAccessConfirmTitle
+    case shareFullAccessConfirmAction
+    case shareFullAccessConfirmPassword
+    case shareFullAccessConfirmKey
+    case shareFullAccessWarningKey
+    case settingsUpdateCheckOn
+    case settingsUpdateCheckOff
+    case sshKeyStored_fmt
+    case sshKeyReplaceAction
+    case actionUpdateSub
+    case vpsAdvancedOverviewHeader
+    case vpsAdvancedActionsHeader
+    case vpsAdvancedRecoverSub
+    case healthActionSharedRecordNote
+    case deviceNameSectionHeader
+    case deviceNameLabel
+    case deviceNameRegenerate
+    case deviceNameFooter
+    case fieldRevealSecret
+    case fieldHideSecret
+    case roomIDPlaceholder
+    case roomIDLinkHint
+    case wbTokenPlaceholder
+    case formAccessSectionHeader
+    case healthChipNotChecked
+    case healthChipWas_fmt
+    case healthChipNoData
+    case shareRecipientHint
 }
 
 extension L10n {

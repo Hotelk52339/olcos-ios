@@ -418,7 +418,7 @@ final class Provisioner: ObservableObject {
             try await SSHRunner._execute(client: client, label: "readiness",
                                          command: SSHRunner.readinessScript(containerName: containerName))
         }
-        let state = SSHRunner.parseReadiness(from: output, containerName: containerName)
+        let state = try SSHRunner.parseReadiness(from: output, containerName: containerName)
         let stats = SSHRunner.parseVPSStats(from: output)
         return (state, stats)
     }

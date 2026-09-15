@@ -1,71 +1,70 @@
 import SwiftUI
 
-// MARK: - ConnectHero — Signal (#486)
+// MARK: - ConnectHero — Signal
 //
-// boc #486
-// #486 was: a left-aligned, all-in-one OlcCard with a verified aurora border.
-// Signal separates the state and dated evidence, central voice-like lines,
-// selected connection plate, and one labelled action with its permanent scope.
-// There is deliberately no centre icon, microphone input, or traffic meter.
+// The main screen's answer, top to bottom:
+//   1. the state word with one line of dated evidence;
+//   2. the firewall picture — a beam meets a stone masonry wall; it breaks through
+//      green when connected, is rejected red on error, and its traffic
+//      particles flow with measured tunnel throughput (no printed figures:
+//      the measured ↓/↑ rate is spoken to VoiceOver only);
+//   3. the one labelled action;
+//   4. the active connection summary — service, transport · host, and the
+//      mode line that says what "Connected" means (VPN / SOCKS5 · port).
+// The connection list below the hero is the switcher; it excludes this subject.
 //
-// Retained #457/#459/#461/#470/#471 contracts:
+// Contracts kept from earlier passes:
 // • State is the largest Dynamic Type text, never shrunk to one line.
-// • Service/transport/host identity is shown once; the switcher excludes it.
-// • The selected record retains its full shared overflow action builder.
-// • Health evidence is dated, with no invented packet/audio measurements.
-// • Scope qualifies the action; live VPN must never inherit proxy verification.
-// • Reasons and blocked actions remain readable and actionable.
-// The waveform expresses connected state only, not a health verdict.
-// eoc #486
+// • Service/transport/host identity is shown once on the screen.
+// • Health evidence is dated; the spoken readout carries only measured counters.
+// • A live VPN session reads connected, never verified (proxy-only probes).
+// • Explicit VPN never silently becomes SOCKS5: the fallback disclosure stays.
 
 struct ConnectHero: View {
-
-    // #486: Signal replaces the dense, left-aligned verdict card. The title
-    // and evidence float above full-width linework; the actual connection and
-    // its overflow menu sit in a separate plate above the one labelled action.
-    // The old aurora ring is not part of Signal. Motion never means verified.
 
     // MARK: Inputs (value-only — the hero renders, it does not decide)
 
     let state: ConnectionState
-    /// The connection the state applies to: the LIVE node while a session is up,
-    /// else the last-used one. Never `store.primary` read directly — a row tap
-    /// moves the selection without reconnecting.
+
+    /// The connected record, or the last used one when idle.
     let subject: ConnectionRecord?
-    /// The honesty layer's verdict for `subject`, already dated.
+
     let health: HealthDisplay
-    /// #459: the tunnel exit's flag glyph (`CountryFlag.emoji(iso2:)`), nil when
-    /// the lookup gave no usable country. Computed by `ConnectionsView`, which
-    /// already owns the `IPChecker.refreshExitGeo` call.
+
+    /// Exit place from the last through-tunnel IP lookup (flag emoji + "City, CC").
     let exitFlag: String?
-    /// #459: the tunnel exit as "Amsterdam, NL"; nil when the lookup returned
-    /// nothing, in which case the evidence line falls back to the verdict.
     let exitPlace: String?
-    // #486: measurement provenance comes from IPChecker, never view appearance.
+    /// IPChecker's actual measurement timestamp; the only honest age source.
     let exitMeasuredAt: Date?
-    /// Which backend a session runs (or would run) through — the scope line.
+
+    /// The backend the session runs (or will run) on, and its SOCKS5 port.
     let mode: TunnelMode
-    /// The port the live session bound, else the configured one.
     let socksPort: Int
-    /// `ConnectionStore.secretsLocked` — the Keychain could not be read yet.
+
     let secretsLocked: Bool
-    // #486: a presented sheet obscures this scene even while the tab is mounted.
+
+    /// False while a sheet covers the screen: clocks and motion pause.
     let isPresented: Bool
+    /// Why an automatic VPN preference fell back to SOCKS5, when it did.
     let modeFallbackReason: String?
-    /// #459: the subject's action set — the SAME builder the rows use, because
-    /// the subject has no row of its own any more. Empty ⇒ no menu is drawn.
+
+    /// False when no saved server links `subject` — it was imported from
+    /// another device, so "fix it on the Servers tab" would point at nothing.
+    var isManagedHere: Bool = true
+
+    /// Smoothed tunnel throughput; nil = no measurement (nothing is spoken).
+    /// Never printed: it only feeds the VoiceOver description of the picture.
+    let throughput: ThroughputReading?
+    /// 0…1 particle-flow intensity derived from `throughput`.
+    let waveIntensity: Double
+
     let menuItems: [OlcMenuItem]
     let onConnect: () -> Void
     let onDisconnect: () -> Void
 
-    /// #457: when the current `.connecting` began, so the evidence line can age
-    /// it ("starting… 6 s") instead of printing a bare, undatable "Connecting…".
+    /// When the current `.connecting` began, so the evidence line can age it.
     @State private var connectingSince: Date?
 
-    // boc #486
-    // #486 was: OlcCard { leading headline/identity/evidence/divider/action }
-    // with an aurora border and an unconditional state spring. Signal gives
-    // the lines their own central space; state changes have no implicit motion.
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: Theme.Metrics.s2) {
@@ -78,19 +77,25 @@ struct ConnectHero: View {
             .padding(.horizontal, Theme.Metrics.s2)
             .padding(.top, Theme.Metrics.s4)
 
-            SignalWaveform(isConnected: state.isConnected, isFailed: isFailed,
-                           isPresented: isPresented)
+            // The picture is one accessibility element whose label is the
+            // measured throughput (or nothing while there is no reading).
+            SignalWaveform(state: beamState, isPresented: isPresented, intensity: waveIntensity,
+                           inboundShare: throughput?.inboundShare ?? 0.5)
                 .padding(.vertical, Theme.Metrics.s2)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(throughputReadout ?? "")
+                .accessibilityAddTraits(.updatesFrequently)
+                .accessibilityHidden(throughputReadout == nil)
+
+            primaryControl
+                .padding(.top, Theme.Metrics.s3)
 
             subjectPlate
-            primaryControl
-                .padding(.top, Theme.Metrics.s5)
+                .padding(.top, Theme.Metrics.s4)
+
             VStack(spacing: Theme.Metrics.s2) {
-                scopeLine
                 if let modeFallbackReason {
-                    // #486: keep the main scope concise without hiding the
-                    // capability explanation. This reveals information only;
-                    // backend preferences still belong in Settings.
+                    // Reveals information only; backend preference lives in Settings.
                     DisclosureGroup {
                         evidenceText(modeFallbackReason, tone: Theme.Palette.textSecondary)
                             .multilineTextAlignment(.leading)
@@ -114,55 +119,14 @@ struct ConnectHero: View {
             connectingSince = new.isConnecting ? (connectingSince ?? Date()) : nil
         }
     }
-    // eoc #486
 
     // MARK: 1. The answer
-
-    // boc #486
-    // #486 was: headlineRow put the overflow beside the state. It acts on the
-    // connection, not the state, so it now lives with the connection identity.
-    private var subjectPlate: some View {
-        HStack(alignment: .top, spacing: Theme.Metrics.s2) {
-            identityBlock
-            Spacer(minLength: Theme.Metrics.s2)
-            heroMenu
-        }
-        .padding(Theme.Metrics.s4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Palette.card,
-                    in: RoundedRectangle(cornerRadius: Theme.Metrics.cardRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.Metrics.cardRadius, style: .continuous)
-                .strokeBorder(Theme.Palette.cardBorder, lineWidth: Theme.Metrics.cardBorderWidth)
-        }
-    }
-
-    private var isFailed: Bool {
-        if case .failed = state { return true }
-        return false
-    }
-    // eoc #486
-
-    /// #459: drawn only when there is a subject to act on — an empty menu is a
-    /// control that does nothing.
-    @ViewBuilder
-    private var heroMenu: some View {
-        if subject != nil, !menuItems.isEmpty {
-            OlcOverflowMenu(items: menuItems)
-        }
-    }
 
     private var stateWord: some View {
         Text(stateTitle)
             .font(Theme.Typography.answer)
             .foregroundStyle(Theme.Palette.textPrimary)
-            // #459 (audit) was: .lineLimit(1) + .minimumScaleFactor(0.55). The
-            // answer is the one line here that may never be shrunk or clipped,
-            // and both happened: "Waiting for network…" is 20 characters at the
-            // largeTitle step with the overflow menu beside it, so it already
-            // rendered smaller than `Typography.answer` on a phone, and past the
-            // 0.55 floor (reached a couple of Dynamic Type steps up) it clipped.
-            // #486: it wraps in the centred Signal header without competing with a menu.
+            // The one line here that may never be shrunk or clipped: it wraps.
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
     }
@@ -177,95 +141,32 @@ struct ConnectHero: View {
         }
     }
 
-    // MARK: 2. The subject
-
-    // boc #461
-    // #461: THE IDENTITY INVERSION — the owner's complaint 1, verbatim: "why
-    // the hell should I look at the fact that ZAZA is connected? Let it say
-    // Yandex Telemost, and under it which protocol it goes through."
-    //
-    // #461 was: `subjectLine` — an `HStack` printing `subject.displayName`,
-    // i.e. "zaza · Telemost", the label they typed for their VPS with the
-    // carrier suffix `ServersView.recordName` appends. One VPS here runs
-    // SEVERAL protocol containers, so the machine is the same on every
-    // connection and the SERVICE is what differs. Mullvad renders
-    // "Netherlands, Amsterdam" over "nl-ams-wg-001" in exactly this shape —
-    // `.title3` semibold identity over `.body` machine detail, `spacing: 2`.
-    //
-    // Two lines (#471 was: three), in descending order of what the user came for:
-    //   1. THE SERVICE — "Yandex Telemost".
-    //   2. HOW · WHOSE — "VP8 · zaza". One `Text` built by CONCATENATION, not
-    //      interpolation, so the two halves carry different weights and tones
-    //      without a second view (and so the pair truncates as one line).
-    //
-    // #471 was: a "LAST USED" eyebrow above the service, drawn whenever the state
-    // was not connected. The hero STATES, it does not narrate: the state word
-    // directly above already says the session is not live, and the card's
-    // position says which connection it is about. One label per fact.
-    @ViewBuilder
-    private var identityBlock: some View {
-        if let subject = subject {
-            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {   // #471 was: 2
-                Text(ConnectionNaming.service(subject.details))
-                    .font(Theme.Typography.answerSupport)
-                    .foregroundStyle(Theme.Palette.textPrimary)
-                    // #461 (audit) was: `.lineLimit(1)`. This is the string the
-                    // owner asked to see, at the title3 step; «Яндекс Телемост»
-                    // clears the card width at the default text size and stops
-                    // clearing it a couple of Dynamic Type steps up, where a
-                    // one-line clamp would ellipsise the service name itself.
-                    // Two lines, breaking on the space between the two words —
-                    // the same rule `ProtocolRowView.labels` adopted for the
-                    // same string.
-                    // #486 was: .lineLimit(2). The named connection must remain
-                    // readable even with the largest accessibility text size.
-                    .fixedSize(horizontal: false, vertical: true)
-                carriedByLine(subject)
-            }
-        } else {
-            Text(L10n.heroSubjectNone.localized())
-                .font(Theme.Typography.answerSupport)
-                .foregroundStyle(Theme.Palette.textSecondary)
+    /// What the firewall picture shows for this state. Waiting for the network
+    /// reads as connecting: the session is down, so the wall closes and the
+    /// beam pushes at it again until the route returns.
+    private var beamState: FirewallBeamState {
+        switch state {
+        case .connected:                    return .connected
+        case .connecting, .waitingForNetwork: return .connecting
+        case .failed:                       return .error
+        case .disconnected:                 return .idle
         }
     }
 
-    /// #461: "VP8 · zaza" — the transport carries the weight, the host label is
-    /// the quiet half, exactly as Windscribe's `LocationNameView` gives city and
-    /// datacenter nickname the same size and lets weight do the ranking.
-    /// The three pieces are bound to locals so this stays three trivial
-    /// expressions rather than one nine-term concatenation — the SwiftUI
-    /// type-checker has failed this repo's CI three times on exactly that shape.
-    private func carriedByLine(_ subject: ConnectionRecord) -> some View {
-        let transport = Text(ConnectionNaming.transport(subject.details))
-            .font(Theme.Typography.bodyStrong)
-            .foregroundStyle(Theme.Palette.textSecondary)
-        let separator = Text(verbatim: " · ")
-            .font(Theme.Typography.body)
-            .foregroundStyle(Theme.Palette.textTertiary)
-        let host = Text(ConnectionNaming.host(subject))
-            .font(Theme.Typography.body)
-            // #486 was: tertiary; server identity is useful, not placeholder text.
-            .foregroundStyle(Theme.Palette.textSecondary)
-        // #486 was: .lineLimit(1) — preserve the selected host at Dynamic Type.
-        return (transport + separator + host).fixedSize(horizontal: false, vertical: true)
-    }
-    // eoc #461
-
-    // MARK: 3. One line of dated evidence
+    // MARK: 2. Dated evidence
 
     @ViewBuilder
     private var evidenceLine: some View {
         switch state {
         case .connecting:
-            ConnectHeroElapsed(since: connectingSince ?? Date(), isPresented: isPresented) // #486
+            ConnectHeroElapsed(since: connectingSince ?? Date(), isPresented: isPresented)
         case .connected:
             connectedEvidence
         case .waitingForNetwork:
             evidenceText(L10n.heroEvidenceNoNetwork.localized(), tone: Theme.Palette.textSecondary)
         case .failed(let raw):
-            // #457: with a mapped reason the sentence is the WHY; without one the
-            // raw message is all we have, so it stands alone and stays red.
-            // #471 was: an explicit `mono: false` — the default now.
+            // With a mapped reason the sentence is the WHY; without one the raw
+            // message is all we have, so it stands alone and stays red.
             evidenceText(failureReason?.message ?? raw,
                          tone: failureReason == nil ? Theme.Palette.red
                                                     : Theme.Palette.textSecondary)
@@ -274,67 +175,34 @@ struct ConnectHero: View {
         }
     }
 
-    /// #459: while a session is up, the WHERE outranks the verdict sentence.
+    /// While a session is up, WHERE traffic exits outranks the verdict sentence.
     /// Green still needs `.verified`: the place is where traffic came out, not
-    /// proof that it did.
-    ///
-    /// #461 (audit) was: "…the one connected-state fact the numbers in
-    /// Diagnostics cannot state, and printing it here means no figure appears on
-    /// this screen twice." Both halves are false — `DiagnosticsFacts.exitRow`
-    /// prints the SAME flag + "Moscow, RU" (with the IP and an age beside it),
-    /// so the place is on this screen twice. It is below the fold since #461, which is
-    /// why it is tolerable, not why it is fine.
-    ///
-    /// #457 (audit fix) was, and still is, the fallback: anything that is not
-    /// `.verified` used to print "no data checked through it yet" — which called
-    /// a REAL measurement taken four minutes ago "never measured". `.fading` and
-    /// `.stale` say what they actually know (in the past tense, which their own
-    /// subtitle already does); only the two states that genuinely have no
-    /// end-to-end reading fall back to that line.
-    ///
-    /// boc #461
-    /// #461 was: a `VStack` holding the place line AND `heroExitSourceNote` —
-    /// two caption lines of #460 provenance ("where your traffic comes out —
-    /// from a location lookup of the exit IP, made through the tunnel") on the
-    /// app's most valuable card. `diagExitNote` states the same fact one card
-    /// down, attached to the exit value it describes. ONE FACT, ONE PLACE: the
-    /// note stays where the value is, and the hero gets ~34 pt of its first
-    /// screenful back for the identity block above.
-    /// eoc #461
+    /// proof that it did. Only IPChecker's measurement timestamp dates it.
     @ViewBuilder
     private var connectedEvidence: some View {
-        // boc #486
-        // #486 was: exitSince = Date() on appearance/place changes. That made a
-        // cached lookup fresh again and did not date a repeat lookup of the same
-        // place. Only IPChecker's actual measurement timestamp is evidence.
         if let place = exitPlace, let measuredAt = exitMeasuredAt {
             ConnectHeroExitLine(text: exitFlag.map { "\($0) \(place)" } ?? place,
                                 since: measuredAt,
                                 tone: sessionVerified ? Theme.Palette.green
                                                       : Theme.Palette.textSecondary,
                                 isPresented: isPresented)
-        // eoc #486
         } else {
             evidenceText(heroEvidenceHasReading ? health.subtitle
                                                 : L10n.heroEvidenceUnverified.localized(),
-                         tone: sessionVerified ? Theme.Palette.green   // #470 was: health.isVerified
+                         tone: sessionVerified ? Theme.Palette.green
                                                : Theme.Palette.textSecondary)
         }
     }
 
-    /// #470: green evidence needs proof about THIS session; #486 removed the ring. Nothing
-    /// verifies a system-VPN session — `verifyTunnel`, keep-alive and the
-    /// Diagnostics latency loop are all proxy-only — so in VPN mode a `.verified`
-    /// verdict can only be a probe or proxy-era reading ≤ 5 min old, which then
-    /// faded mid-session. A live VPN session reads connected, never verified.
+    /// Nothing verifies a system-VPN session — `verifyTunnel`, keep-alive and
+    /// the Diagnostics latency loop are proxy-only — so a live VPN session
+    /// reads connected, never verified.
     private var sessionVerified: Bool {
         state.isConnected && health.isVerified && mode == .proxy
     }
 
-    /// #457 (audit fix): does this verdict carry an actual end-to-end reading to
-    /// report? `.never` never measured anything; `.handshakeOnly` reached the room
-    /// but no data passed. Everything else — verified, ageing, stale, broken,
-    /// couldn't-check — has something true to say and says it in its own subtitle.
+    /// Does this verdict carry an actual end-to-end reading? `.never` never
+    /// measured anything; `.handshakeOnly` reached the room but no data passed.
     private var heroEvidenceHasReading: Bool {
         switch health {
         case .never, .handshakeOnly: return false
@@ -343,33 +211,20 @@ struct ConnectHero: View {
     }
 
     /// `mono` is for ADDRESSES AND PORTS, never sentences.
-    ///
-    /// #471 was: `mono: Bool = true`, so every caller that did not opt out — the
-    /// verdict subtitle, the no-network line, the unverified line — rendered a
-    /// SENTENCE in the monospaced face. `.monospacedDigit()` keeps the figures
-    /// inside those sentences from jittering as an age ticks, which is the only
-    /// thing mono was buying here.
     private func evidenceText(_ text: String, tone: Color, mono: Bool = false) -> some View {
         Text(text)
             .font(mono ? Theme.Typography.mono
                        : Theme.Typography.caption.monospacedDigit())
             .foregroundStyle(tone)
-            // #457: a reason is never truncated (HIG Typography) — it wraps.
             .fixedSize(horizontal: false, vertical: true)
             .frame(minHeight: 18, alignment: .leading)
     }
 
-    /// #457: the failure's HUMAN headline, from the honesty layer's mapper —
-    /// never the raw core line, which the evidence line above already carries in
-    /// its engineering voice.
+    /// The failure's HUMAN headline from the honesty layer's mapper.
     @ViewBuilder
     private var reasonLine: some View {
         if case .failed = state, let reason = failureReason {
             Text(reason.headline)
-                // #471: the same step, through the token. #471 was: a local
-                // `.system(.subheadline, design: .rounded).weight(.semibold)` —
-                // exactly `Typography.label`, re-declared here, which is the
-                // drift the TYPE NOTE at the top of this file warns about.
                 .font(Theme.Typography.label)
                 .foregroundStyle(Theme.Palette.red)
                 .fixedSize(horizontal: false, vertical: true)
@@ -377,12 +232,9 @@ struct ConnectHero: View {
     }
 
     private var failureReason: HealthReason? {
-        // #469: in `.failed(raw)` the sentence must explain THIS failure. It used
-        // to read only `health` — the subject's stored verdict from an earlier
-        // probe — so a port-busy failure five minutes after a key-mismatch probe
-        // was headlined "Key no longer matches" with the real reason discarded.
-        // Classify the raw message first; fall back to the stored verdict only
-        // when it carries nothing the mapper recognises.
+        // In `.failed(raw)` the sentence must explain THIS failure: classify the
+        // raw message first, fall back to the stored verdict only when the
+        // mapper recognises nothing in it.
         if case .failed(let raw) = state {
             let now = HealthFailureMapper.reason(forRaw: raw)
             if now != .unknown { return now }
@@ -393,37 +245,31 @@ struct ConnectHero: View {
         }
     }
 
-    // MARK: 4. The scope — a footnote to the action (#471 was: "always on screen")
+    // MARK: 3. Spoken throughput
 
-    /// #471: the scope stays PERMANENTLY VISIBLE (the truth rule: `tunnelMode`
-    /// changes what the word "Connected" MEANS), but it is a footnote to the
-    /// button, not a readout above it — so it moved below `primaryControl` and
-    /// lost the loopback address that made it a sentence.
-    ///
-    /// #471 was: `.system(.caption2, design: .monospaced)` on "Proxy · apps
-    /// pointed at 127.0.0.1:8808" — a whole prose line in the face reserved for
-    /// measured data, at the seventh size step the type scale abolished. The copy
-    /// is now "Proxy · port 8808" / "VPN · whole device"; the port keeps its
-    /// digits aligned without dragging the words into mono.
-    private var scopeLine: some View {
-        Text(mode == .vpn
-             ? L10n.heroScopeVPN.localized()
-             : L10n.heroScopeProxy_fmt.formatted(String(socksPort)))
-            .font(Theme.Typography.caption.monospacedDigit())
-            .foregroundStyle(Theme.Palette.textSecondary) // #486: scope must remain legible.
-            // #459 (audit) was: .lineLimit(1) + .minimumScaleFactor(0.8). The
-            // line that says what "Connected" MEANS may not be cut, so it wraps.
-            .fixedSize(horizontal: false, vertical: true)
+    /// The picture's VoiceOver label — nothing is printed on screen. Only
+    /// while connected and only from a real sample: VPN mode speaks ↓ and ↑
+    /// from the packet path; SOCKS5 in-app mode speaks one "about" figure from
+    /// loopback deltas (see TunnelThroughput.swift). Nil hides the element.
+    private var throughputReadout: String? {
+        guard state.isConnected, let throughput else { return nil }
+        switch throughput {
+        case .exact(let down, let up):
+            return L10n.throughputA11y_fmt.formatted(ThroughputFormat.rate(down),
+                                                     ThroughputFormat.rate(up))
+        case .estimate(let total):
+            return L10n.throughputEstimateA11y_fmt.formatted(ThroughputFormat.rate(total))
+        }
     }
 
-    // MARK: 5. The one action
+    // MARK: 4. The one action
 
     @ViewBuilder
     private var primaryControl: some View {
         switch state {
         case .connecting:
             // Never lock the control mid-connect: a dead carrier combo must not
-            // cost the whole start timeout with no way out (#269).
+            // cost the whole start timeout with no way out.
             OlcButton(L10n.cancel.localized(), systemImage: "xmark",
                       role: .secondary, fillWidth: true, action: onDisconnect)
         case .connected, .waitingForNetwork:
@@ -436,13 +282,13 @@ struct ConnectHero: View {
 
     @ViewBuilder
     private var connectControl: some View {
-        VStack(alignment: .leading, spacing: Theme.Metrics.s2) {   // #471 was: 6
+        VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
             OlcButton(connectTitle, systemImage: "power",
                       role: .primary, fillWidth: true, action: onConnect)
                 .disabled(!canConnect)
             if let blocked = blockedReason {
                 Text(blocked)
-                    .font(Theme.Typography.caption)   // #471 was: .caption
+                    .font(Theme.Typography.caption)
                     .foregroundStyle(Theme.Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -462,34 +308,105 @@ struct ConnectHero: View {
         return nil
     }
 
-    /// #457: the fix for a failure whose action lives on another screen. Naming
-    /// the screen is honest; drawing a button that cannot run here is not.
+    /// The fix for a failure whose action lives on another screen: naming the
+    /// screen is honest; drawing a button that cannot run here is not.
     @ViewBuilder
     private var elsewhereNote: some View {
         if case .failed = state, let action = failureReason?.action,
-           let note = ConnectActionSite.elsewhereNote(for: action) {
+           let note = ConnectActionSite.elsewhereNote(for: action, managedHere: isManagedHere) {
             Text(note)
-                .font(Theme.Typography.caption)   // #471 was: .caption
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    // #486 was: auroraVerdictRing, a gradient card border for verified sessions.
-    // Dated evidence still carries the verdict; Signal's lines carry no proof.
+    // MARK: 5. The active connection summary
+
+    /// Service · transport · host · mode, with the record's overflow menu.
+    /// The mode line is permanent: the backend changes what "Connected" MEANS.
+    private var subjectPlate: some View {
+        HStack(alignment: .top, spacing: Theme.Metrics.s2) {
+            VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
+                identityBlock
+                scopeLine
+            }
+            Spacer(minLength: Theme.Metrics.s2)
+            heroMenu
+        }
+        .padding(Theme.Metrics.s4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Palette.card,
+                    in: RoundedRectangle(cornerRadius: Theme.Metrics.cardRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.Metrics.cardRadius, style: .continuous)
+                .strokeBorder(Theme.Palette.cardBorder, lineWidth: Theme.Metrics.cardBorderWidth)
+        }
+    }
+
+    /// Drawn only when there is a subject to act on — an empty menu is a
+    /// control that does nothing.
+    @ViewBuilder
+    private var heroMenu: some View {
+        if subject != nil, !menuItems.isEmpty {
+            OlcOverflowMenu(items: menuItems)
+        }
+    }
+
+    /// The SERVICE first ("Yandex Telemost"), then how and where it goes
+    /// ("VP8 · ams-1"). Neither line is clamped: they stay readable at the
+    /// largest accessibility text size.
+    @ViewBuilder
+    private var identityBlock: some View {
+        if let subject = subject {
+            Text(ConnectionNaming.service(subject.details))
+                .font(Theme.Typography.answerSupport)
+                .foregroundStyle(Theme.Palette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            carriedByLine(subject)
+        } else {
+            Text(L10n.heroSubjectNone.localized())
+                .font(Theme.Typography.answerSupport)
+                .foregroundStyle(Theme.Palette.textSecondary)
+        }
+    }
+
+    /// "VP8 · ams-1" — transport carries the weight, the host is the quiet half.
+    /// Bound to locals so the concatenation stays trivial for the type-checker.
+    private func carriedByLine(_ subject: ConnectionRecord) -> some View {
+        let transport = Text(ConnectionNaming.transport(subject.details))
+            .font(Theme.Typography.bodyStrong)
+            .foregroundStyle(Theme.Palette.textSecondary)
+        let separator = Text(verbatim: " · ")
+            .font(Theme.Typography.body)
+            .foregroundStyle(Theme.Palette.textTertiary)
+        let host = Text(ConnectionNaming.host(subject))
+            .font(Theme.Typography.body)
+            .foregroundStyle(Theme.Palette.textSecondary)
+        return (transport + separator + host).fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// "VPN · whole device" / "SOCKS5 · port 8808". Digits stay aligned
+    /// without dragging the words into mono; the line wraps, never clips.
+    private var scopeLine: some View {
+        Text(mode == .vpn
+             ? L10n.heroScopeVPN.localized()
+             : L10n.heroScopeProxy_fmt.formatted(String(socksPort)))
+            .font(Theme.Typography.caption.monospacedDigit())
+            .foregroundStyle(Theme.Palette.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, Theme.Metrics.s1)
+    }
 }
 
-// MARK: - ConnectHeroElapsed (#457)
+// MARK: - ConnectHeroElapsed
 //
-// #457: `.connecting` is the one state with no step count the core can report,
-// so the honest signal is elapsed time — a number that visibly moves, not a
-// bare word. One ticking view, isolated so the hero's own body never re-runs
-// the whole card's type-check for it.
+// `.connecting` is the one state with no step count the core can report, so
+// the honest signal is elapsed time. One ticking view, isolated so the hero's
+// body never re-runs for it; the clock stops while the screen cannot be seen.
 
 private struct ConnectHeroElapsed: View {
     let since: Date
-    // boc #486: text ages are not waveform motion; still stop their clocks when
-    // the screen cannot be seen. Returning resumes from the real start date.
     let isPresented: Bool
     @Environment(\.scenePhase) private var scenePhase
     @State private var isVisible = false
@@ -515,26 +432,23 @@ private struct ConnectHeroElapsed: View {
     private func label(at date: Date) -> some View {
         Text(L10n.heroEvidenceStarting_fmt.formatted(Int(max(0, date.timeIntervalSince(since)))))
     }
-    // eoc #486
 }
 
-// MARK: - ConnectHeroExitLine (#470)
+// MARK: - ConnectHeroExitLine
 //
-// #470: the connected evidence line WITH its age — "🇳🇱 Amsterdam, NL · 2 h ago",
-// re-rendered once a minute like `ConnectHeroElapsed`, so the exit place is dated
-// evidence rather than a present-tense claim from a lookup made at connect time.
+// The connected evidence line WITH its age — "🇳🇱 Amsterdam, NL · 2 h ago",
+// re-rendered once a minute, so the exit place is dated evidence rather than a
+// present-tense claim from a lookup made at connect time.
 
 private struct ConnectHeroExitLine: View {
     let text: String
     let since: Date
     let tone: Color
-    // boc #486
     let isPresented: Bool
     @Environment(\.scenePhase) private var scenePhase
     @State private var isVisible = false
 
     var body: some View {
-        // #486 was: an always-mounted periodic clock, including in background.
         Group {
             if isVisible && isPresented && scenePhase == .active {
                 TimelineView(.periodic(from: since, by: 60)) { context in
@@ -556,16 +470,14 @@ private struct ConnectHeroExitLine: View {
     private func label(at date: Date) -> some View {
         Text("\(text) · \(HealthAge.phrase(max(0, date.timeIntervalSince(since))))")
     }
-    // eoc #486
 }
 
-// MARK: - ConnectActionSite (#457)
+// MARK: - ConnectActionSite
 //
-// #457: `HealthDisplay.suggestedAction` names an offer; this decides WHERE that
+// `HealthDisplay.suggestedAction` names an offer; this decides WHERE that
 // offer can actually be honoured. Only re-checking runs on the Connect screen —
 // recovering a key, changing a room and starting a container all need SSH, and
-// the port lives in Settings. Rather than draw a dead button (or, worse, hide
-// the fix in an overflow menu), the row and the hero name the screen.
+// the port lives in Settings. Rather than draw a dead button, name the screen.
 
 enum ConnectActionSite {
     case here, servers, settings
@@ -579,10 +491,15 @@ enum ConnectActionSite {
     }
 
     /// The sentence to print when the fix is not on this screen; nil when it is.
-    static func elsewhereNote(for action: HealthAction) -> String? {
+    /// A Servers-tab fix on a record no saved server links to (imported from
+    /// another device) is replaced by the only honest advice: ask the owner.
+    static func elsewhereNote(for action: HealthAction, managedHere: Bool = true) -> String? {
         switch site(for: action) {
         case .here:     return nil
-        case .servers:  return L10n.healthActionOnServersTab_fmt.formatted(action.title)
+        case .servers:
+            return managedHere
+                ? L10n.healthActionOnServersTab_fmt.formatted(action.title)
+                : L10n.healthActionSharedRecordNote.localized()
         case .settings: return L10n.healthActionInSettings_fmt.formatted(action.title)
         }
     }

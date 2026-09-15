@@ -1006,41 +1006,74 @@ enum SSHRunner {
     ///   PODMAN=yes|no
     ///   IMAGE=yes|no
     ///   CONTAINER=<podman ps status line or empty>
+    ///   CONTAINER_RC=<exit code of podman ps>
+    ///   … DISK/RAM/UPTIME …
+    ///   READINESS_END
+    ///
+    /// The `CONTAINER_RC` line and the `READINESS_END` sentinel exist so the
+    /// parser can tell "no such container" from "podman ps failed" or "the
+    /// output was cut short". Before them an empty CONTAINER line — whatever
+    /// its cause — read as `.imageReady`, and a running server with all its
+    /// protocols flashed "Ready to install" until the next refresh.
     static func readinessScript(containerName: String?) -> String {
         let containerCmd: String
         if let name = containerName {
             let safe = shellSafe(name)
-            containerCmd = "podman ps -a --filter 'name=^\(safe)$' --format '{{.Status}}' 2>/dev/null | head -1"
+            // The status is captured into a variable first so `printf` always
+            // ends the CONTAINER line with a newline — a bare pipe into `head`
+            // printed nothing on a miss and the next line glued onto it.
+            containerCmd = "_c=$(podman ps -a --filter 'name=^\(safe)$' --format '{{.Status}}' 2>/dev/null); _rc=$?; " +
+                "printf 'CONTAINER=%s\\n' \"$(printf '%s\\n' \"$_c\" | head -1)\"; printf 'CONTAINER_RC=%s\\n' \"$_rc\""
         } else {
-            containerCmd = "echo ''"
+            containerCmd = "printf 'CONTAINER=\\n'; printf 'CONTAINER_RC=0\\n'"
         }
         return """
         command -v podman >/dev/null 2>&1 && echo 'PODMAN=yes' || echo 'PODMAN=no'
         podman image exists \(AppConstants.serverGoImage) 2>/dev/null && echo 'IMAGE=yes' || echo 'IMAGE=no'
-        printf 'CONTAINER='
         \(containerCmd)
         df -h / 2>/dev/null | awk 'NR==2{printf "DISK=%s/%s\\n",$3,$2}'
         free -m 2>/dev/null | awk 'NR==2{printf "RAM=%sM/%sM\\n",$3,$2}'
         uptime 2>/dev/null | sed 's/.*up *//;s/,.*load.*//' | awk '{printf "UPTIME=%s\\n",$0}'
+        echo 'READINESS_END'
         """
     }
 
+    /// Throws `ProvisionError.parseFailed` when the reading is inconclusive —
+    /// the script did not run to its sentinel, or `podman ps` itself failed on
+    /// a host that has a container on record. Callers keep the last real
+    /// reading in that case; an absent container is reported only when podman
+    /// actually said so (exit 0, empty list).
     static func parseReadiness(from output: String,
-                                containerName: String?) -> VPSReadinessState {
+                                containerName: String?) throws -> VPSReadinessState {
         var podman = false
+        var sawPodmanLine = false
         var image  = false
         var containerStatus = ""
+        var containerRC: Int? = nil
+        var sawEnd = false
         for line in output.components(separatedBy: "\n") {
             let t = line.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("PODMAN=") { sawPodmanLine = true }
             if t == "PODMAN=yes" { podman = true }
             if t == "IMAGE=yes"  { image  = true }
-            if t.hasPrefix("CONTAINER=") {
+            if t.hasPrefix("CONTAINER_RC=") {
+                containerRC = Int(t.dropFirst("CONTAINER_RC=".count))
+            } else if t.hasPrefix("CONTAINER=") {
                 containerStatus = String(t.dropFirst("CONTAINER=".count))
             }
+            if t == "READINESS_END" { sawEnd = true }
+        }
+        guard sawPodmanLine, sawEnd else {
+            throw ProvisionError.parseFailed("readiness probe returned an incomplete reading")
         }
         guard podman else { return .noPodman }
         guard image  else { return .noImage }
-        if containerName == nil || containerStatus.isEmpty { return .imageReady }
+        if containerName == nil { return .imageReady }
+        if containerStatus.isEmpty {
+            // `podman ps` printed nothing: trust that only if it also exited 0.
+            if let rc = containerRC, rc == 0 { return .imageReady }
+            throw ProvisionError.parseFailed("podman ps failed (exit \(containerRC.map(String.init) ?? "?")) — keeping the last reading")
+        }
         if containerStatus.hasPrefix("Up") { return .containerRunning(containerStatus) }
         // Normalize raw podman status strings for display.
         // "Initialized" = container created but never started; show nothing extra.

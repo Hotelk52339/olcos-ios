@@ -4,7 +4,7 @@
   <h1>olcOS</h1>
   <p><strong>Your iPhone. Your server. Your connection.</strong></p>
   <p>iOS 17+ · SwiftUI · Russian / English / French</p>
-  <p><strong>1.0</strong> · build <strong>1</strong> · release tag <code>v1.0.1</code></p>
+  <p><strong>2.0</strong> · build <strong>2</strong> · release tag <code>v2.0.2</code></p>
   <p>
     <a href="#quick-start">Get started</a> ·
     <a href="docs/build.md">Build</a> ·
@@ -17,7 +17,7 @@
 
 <div align="center">
   <img src="docs/assets/olcos-preview-en.png" width="1080" alt="olcOS interface concept preview showing connection and server management; not a native screenshot" />
-  <p><sub>UI concept preview — an interface illustration, not a native screenshot or evidence of a successful Xcode run.</sub></p>
+  <p><sub>UI concept preview — an illustration drawn from the current screens and strings of the app, not a native screenshot or evidence of a successful Xcode run.</sub></p>
 </div>
 
 > **Support scope:** iPhone and iPad with iOS/iPadOS 17+; VPN availability depends on the installed signature, NetworkExtension entitlements and iOS permission, not merely the type of Apple ID. [Project configuration](project.yml) · [VPN capability checks](App/Core/VPNController.swift).
@@ -32,7 +32,7 @@
 | **Your own VPS** | Install and manage a server over SSH, import connections using a URI or QR code, and subscribe to server lists. [Administration](App/Core/SSHRunner.swift) · [link formats](docs/uri.md). |
 | **WebRTC carriers** | The code includes Telemost, WBStream and Jitsi; an option in the interface is not evidence that it works on your network today. [Configuration matrix](App/Utilities/CarrierTransportMatrix.swift). |
 | **Inspectable connection state** | Connection, IP and speed checks plus logs help investigate failures; one successful probe does not guarantee that every app works. [Diagnostics](docs/diagnostic-messages.md). |
-| **A quiet interface** | Russian, English and French; haptic feedback for actions; a decorative waveform that moves only while connected, visible and active, respecting Reduce Motion. It is **not a traffic graph or speed measurement**. [Localization](App/Localization/L10n.swift) · [waveform and haptics](App/Views/SignalWaveform.swift). |
+| **A quiet interface** | Russian, English and French; haptic feedback for actions; a beam-and-stone-firewall picture that runs continuously only while connecting or connected, on screen and in the foreground; idle and error play a short finite animation and then hold a static frame; with Reduce Motion the frame is always static. Density and pace follow the measured tunnel throughput, but no numbers are printed: it is **not a traffic graph or speed measurement**. [Localization](App/Localization/L10n.swift) · [motion and haptic policy](App/Views/SignalWaveform.swift). |
 
 ## How traffic flows
 

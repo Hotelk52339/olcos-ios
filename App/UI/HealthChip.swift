@@ -1,38 +1,32 @@
 import SwiftUI
 
-// MARK: - OlcHealthChip (#456, #457)
+// MARK: - OlcHealthChip
 //
-// #456: the ONE evidence chip. Renders a `HealthDisplay` (App/Models/NodeHealth.swift)
-// as a compact pill: status glyph + short label. Green ONLY for `.verified` —
-// every other state is neutral, amber or red, never "looks fine".
+// The ONE evidence chip. Renders a `HealthDisplay` (App/Models/NodeHealth.swift)
+// as a calm, right-aligned status: a small glowing dot in the status colour,
+// one primary line in the regular caption face (`146 ms`, `Server didn't
+// answer`, `Not checked`) and, when there is an age to date it with, a smaller
+// tertiary age (`now`, `5m`). Green is granted ONLY by `.verified`; every other
+// state is neutral, amber or red, so colour never outruns the evidence. Both the
+// Connections rows and the Servers tab's protocol rows render this view, so
+// "146 ms · now" means the same on both tabs.
 //
-// It lives here (not in DesignSystem.swift) because it is the only component
-// that knows the health vocabulary; the tokens it draws with — `OlcStatusTone`,
-// `Theme.Palette` — already exist and are used unchanged. Both the Connections
-// rows and the Manage VPS protocol rows render THIS view, so "48 ms · 2m" means
-// exactly the same thing on both tabs.
-//
-// #457: two fixes, both about the truth being readable.
-//  • GLYPH + WORD, ALWAYS. #457 was: a bare 7pt `Circle().fill(display.tone.color)`
-//    and a label that was DROPPED for `.checking` — so four of the eight states
-//    (`.never`, `.fading`, `.inconclusive`, `.stale`) rendered as the SAME grey
-//    circle, and the in-flight state rendered as a spinner with no word at all.
-//    Four different facts — "never checked", "worked a while ago", "couldn't
-//    check", "too old to trust" — painted identically. Now every state draws its
-//    own silhouette (see `OlcHealthGlyph`) and always carries its word.
-//  • NEVER SHRINK, NEVER CLIP. #457 was: `.lineLimit(1)`. Russian runs long
-//    («не проверено», «устарело · 5 мин»), so the label was tail-truncated in a
-//    narrow row — and `.minimumScaleFactor` would only trade truncation for text
-//    too small to read. The chip wraps to two lines and grows instead.
+// Rules the chip enforces:
+//  • Never wraps, never grows the row. Each line is ONE line; long verdicts
+//    scale down to 85 % and then truncate. The row's title carries the layout
+//    priority, so the chip yields first.
+//  • No capsule, no border, no mono face. The old pill drew a hairline
+//    capsule around a monospaced sentence; the user called it crooked.
+//  • Still readable without colour. With "Differentiate Without Colour" on,
+//    the dot becomes the state's own SF Symbol (`OlcHealthGlyph`); the primary
+//    line differs by WORD in every state regardless.
+//  • `.checking` swaps the dot for a mini spinner — an in-flight probe is the
+//    one state where motion IS the honest signal.
 
-/// #457: `HealthDisplay` → SF Symbol. The rule this enforces: no two states may
-/// ever render the same pixels. `HealthDisplay.tone` returns `.unknown` for FOUR
-/// distinct states, so the tone's own glyph is not enough here — the health
-/// vocabulary needs its own, finer mapping.
-///
-/// It is a free-standing enum rather than a `HealthDisplay` extension so the
-/// honesty layer (App/Models/NodeHealth.swift) stays free to grow its own
-/// `symbol` later without colliding with this file.
+/// `HealthDisplay` → SF Symbol, one silhouette per state. `HealthDisplay.tone`
+/// returns `.unknown` for four distinct states, so the health vocabulary needs
+/// its own, finer mapping. Drawn instead of the dot under "Differentiate
+/// Without Colour", and used by VoiceOver-free grayscale checks.
 enum OlcHealthGlyph {
     static func symbol(for display: HealthDisplay) -> String {
         switch display {
@@ -48,20 +42,36 @@ enum OlcHealthGlyph {
     }
 }
 
+/// Geometry of the glow dot — one place, so the two tabs draw the same dot.
+enum OlcHealthDotMetrics {
+    /// The solid core.
+    static let core: CGFloat = 8
+    /// The soft ring behind it (drawn at low alpha, then blurred).
+    static let halo: CGFloat = 16
+    /// Alpha of the halo for a state that carries a real colour.
+    static let haloAlpha: Double = 0.28
+    /// Alpha of the halo for a neutral (grey) state — present, but quieter.
+    static let neutralHaloAlpha: Double = 0.12
+    /// Long verdicts may shrink this far before they truncate.
+    static let minimumScale: CGFloat = 0.85
+}
+
 struct OlcHealthChip: View {
     let display: HealthDisplay
     /// When non-nil the chip becomes a button (re-verify on tap).
     var onTap: (() -> Void)? = nil
 
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
     var body: some View {
-        // #456: tappable and static chips draw the IDENTICAL pill — only the
-        // touch target and the a11y traits differ.
+        // Tappable and static chips draw the identical status — only the touch
+        // target and the accessibility traits differ.
         if onTap != nil {
             Button { onTap?() } label: { chip }
                 .buttonStyle(.plain)
-                // #456: grow the TOUCH region to Apple's 44pt minimum without
-                // enlarging the drawn pill (mirrors ConnectionsView.healthButton).
-                .frame(minHeight: 44)
+                // Grow the touch region to the control minimum without
+                // enlarging what is drawn.
+                .frame(minHeight: Theme.Metrics.controlHeight)
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(accessibilityText)
@@ -73,68 +83,99 @@ struct OlcHealthChip: View {
         }
     }
 
-    /// The drawn pill: glyph + word, in every state.
+    /// Dot on the left, the two text lines stacked and right-aligned beside it.
+    /// `fixedSize(horizontal: false, vertical: true)` lets the stack take its
+    /// natural height while the parent HStack still decides its width.
     private var chip: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Theme.Metrics.s2) {
-            glyph
-            Text(label)
-                .font(Theme.Typography.caption.monospacedDigit())
-                // #456: green text is granted ONLY by `.verified` — the same
-                // rule the glyph follows, so colour never outruns the evidence.
-                .foregroundStyle(display.isVerified ? Theme.Palette.green
-                                                    : Theme.Palette.textSecondary)
-                // #457 was: .lineLimit(1). Two lines, and the pill grows to fit
-                // rather than cutting the word in half.
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .center, spacing: Theme.Metrics.s2) {
+            indicator
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(text.primary)
+                    .font(Theme.Typography.caption)
+                    .foregroundStyle(primaryColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(OlcHealthDotMetrics.minimumScale)
+                    .truncationMode(.tail)
+                if let age = text.secondary {
+                    Text(age)
+                        .font(Theme.Typography.caption)
+                        .textScale(.secondary)
+                        .foregroundStyle(Theme.Palette.textTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(OlcHealthDotMetrics.minimumScale)
+                }
+            }
+            .multilineTextAlignment(.trailing)
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 9)
         .padding(.vertical, Theme.Metrics.s1)
-        .background(Theme.Palette.fill, in: Capsule())
-        // #457: the capsule is a `Palette.fill` plate — in Light that is a 6%
-        // wash on a white card, so it needs its edge (see OlcButton.secondary).
-        .overlay { Capsule().strokeBorder(Theme.Palette.fillBorder, lineWidth: 1) }
     }
 
-    /// #457: the glyph channel. `.checking` keeps its spinner — an in-flight
-    /// probe is the one state where motion IS the honest signal — and now says
-    /// "Checking…" beside it instead of leaving the word out.
+    /// The tone channel: a glowing dot, or the state's glyph when the user has
+    /// asked not to rely on colour, or a spinner while a probe is in flight.
     @ViewBuilder
-    private var glyph: some View {
+    private var indicator: some View {
         if display.isChecking {
-            ProgressView().controlSize(.mini)
-        } else {
+            ProgressView()
+                .controlSize(.mini)
+                .frame(width: OlcHealthDotMetrics.halo, height: OlcHealthDotMetrics.halo)
+        } else if differentiateWithoutColor {
             Image(systemName: OlcHealthGlyph.symbol(for: display))
-                // Dynamic-Type-backed so the glyph moves with the label.
-                .font(Theme.Typography.caption.weight(.bold))
-                .foregroundStyle(display.tone.color)
+                .font(Theme.Typography.caption.weight(.semibold))
+                .foregroundStyle(dotColor)
+                .frame(width: OlcHealthDotMetrics.halo, height: OlcHealthDotMetrics.halo)
+        } else {
+            glowDot
         }
     }
 
-    /// #457 was: `display.chipLabel`, rendered only `if !chipLabel.isEmpty` —
-    /// and `.checking`'s chipLabel is deliberately empty (the spinner used to BE
-    /// the message). A spinner alone is motion plus colour with no word, which
-    /// is the same failure as a bare dot. Fall back to the display's own title,
-    /// which is already the right sentence ("Checking…" / «Проверяем…»).
-    /// Localised at the point of use — never cached.
-    private var label: String {
-        let short = display.chipLabel
-        return short.isEmpty ? display.title : short
+    /// 8pt core over a soft 16pt halo. The halo is the core's own colour at low
+    /// alpha with a small blur, so it reads as light spilling from the dot, not
+    /// as a second ring.
+    private var glowDot: some View {
+        ZStack {
+            Circle()
+                .fill(dotColor.opacity(haloAlpha))
+                .frame(width: OlcHealthDotMetrics.halo, height: OlcHealthDotMetrics.halo)
+                .blur(radius: 2)
+            Circle()
+                .fill(dotColor)
+                .frame(width: OlcHealthDotMetrics.core, height: OlcHealthDotMetrics.core)
+        }
+        .frame(width: OlcHealthDotMetrics.halo, height: OlcHealthDotMetrics.halo)
+        .accessibilityHidden(true)
     }
 
-    /// #456: VoiceOver gets the full sentence ("Verified. 48 ms, checked 2m ago"),
-    /// not the compressed pill text. Localised at the point of use.
+    private var isNeutral: Bool { display.tone == .unknown }
+
+    private var haloAlpha: Double {
+        isNeutral ? OlcHealthDotMetrics.neutralHaloAlpha : OlcHealthDotMetrics.haloAlpha
+    }
+
+    /// `OlcStatusTone.color` already maps `.unknown` to the tertiary text colour.
+    private var dotColor: Color { display.tone.color }
+
+    /// The verdict line: primary text for an earned present-tense value, the
+    /// secondary text colour for everything else. Never the tone colour — the
+    /// dot carries the tone, the words carry the fact.
+    private var primaryColor: Color {
+        display.isVerified ? Theme.Palette.textPrimary : Theme.Palette.textSecondary
+    }
+
+    private var text: HealthChipText { display.chipText }
+
+    /// VoiceOver gets the full sentence ("Verified. 48 ms, checked 2m ago"),
+    /// not the compressed chip text.
     private var accessibilityText: String {
         "\(display.title). \(display.subtitle)"
     }
 }
 
 #if DEBUG
-/// #457: the grayscale acceptance test for the health vocabulary — eight states,
-/// eight silhouettes, eight words. If any two rows look alike with Color Filters
-/// → Grayscale on, the mapping above is wrong.
+/// Acceptance preview — eight states, eight words, one dot. If any two rows
+/// read alike with Color Filters → Grayscale on, `chipText` is wrong.
 #Preview("OlcHealthChip — the eight states") {
-    VStack(alignment: .leading, spacing: Theme.Metrics.s3) {
+    VStack(alignment: .trailing, spacing: Theme.Metrics.s3) {
         OlcHealthChip(display: .never)
         OlcHealthChip(display: .checking)
         OlcHealthChip(display: .verified(ms: 128, age: 20))
@@ -145,7 +186,7 @@ struct OlcHealthChip: View {
         OlcHealthChip(display: .stale(age: 7200))
     }
     .padding(Theme.Metrics.s5)
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
     .background(Theme.Palette.bg)
 }
 #endif

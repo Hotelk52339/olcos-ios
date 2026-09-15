@@ -1,8 +1,5 @@
 import SwiftUI
 
-// #491: Signal log-reader chrome and native pickers only. Subject routing, exports,
-// fetch scheduling and selected-container scope remain with the audited owners.
-
 // #316: single-stack Logs screen. #294's per-source rework made LogsView a
 // `TabView` nested inside MainTabView's `TabView`, which rendered a second
 // tab strip at the bottom, and every tab stacked its own NavigationStack +
@@ -423,11 +420,11 @@ struct LogsView: View {
            let host = selectedHost,
            let peers = store.peerCounts[selectedContainerKey(host)] {   // #476
             Text(L10n.logsPeerCount_fmt.formatted(peers))
-                .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
+                .font(Theme.Typography.caption)
                 .monospacedDigit()
                 .foregroundStyle(Theme.Palette.textSecondary)
             Text("·")
-                .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
+                .font(Theme.Typography.caption)
                 .foregroundStyle(Theme.Palette.textTertiary)
         }
     }
@@ -480,10 +477,9 @@ struct LogsView: View {
     /// fetch runs. #457: a subject-pinned host drops the picker entirely.
     private var containerSourceCard: some View {
         OlcCard {
-            VStack(alignment: .leading, spacing: Theme.Metrics.s3) {   // #471: B9 — 10 → s3
+            VStack(alignment: .leading, spacing: Theme.Metrics.s3) {
                 if serverStore.hosts.isEmpty && subject.host == nil {
                     Text(L10n.logsContainerNoServers.localized())
-                        // #471: B9 — prose is step 3. was: .font(.subheadline)
                         .font(Theme.Typography.body)
                         .foregroundStyle(Theme.Palette.textSecondary)
                 } else {
@@ -495,7 +491,7 @@ struct LogsView: View {
             }
         }
         .padding(.horizontal)
-        .padding(.bottom, 10)
+        .padding(.bottom, Theme.Metrics.s3)
         .animation(.easeInOut(duration: 0.2), value: fetchPhase != nil)
     }
 
@@ -515,17 +511,16 @@ struct LogsView: View {
     // eoc #491
 
     private func fetchProgress(_ phase: Int) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Metrics.s2) {   // #471: B9 — 6 → s2
+        VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
             HStack {
                 Text(phaseText(phase))
-                    // #471 was: .font(.system(.caption, design: .monospaced))
                     .font(Theme.Typography.mono)
                     .foregroundStyle(Theme.Palette.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Spacer(minLength: 8)
+                Spacer(minLength: Theme.Metrics.s2)
                 Text("\(min(phase + 1, Self.fetchPhaseCount))/\(Self.fetchPhaseCount)")
-                    .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
+                    .font(Theme.Typography.caption)
                     .monospacedDigit()
                     .foregroundStyle(Theme.Palette.textTertiary)
             }
@@ -814,17 +809,13 @@ struct LogBodyView: View {
             // Share/Copy for the full history.
             let visible = LogRendering.capped(items)
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Metrics.s2) {   // #471: B9 — 8 → s2
+                VStack(alignment: .leading, spacing: Theme.Metrics.s2) {
                     if visible.count < items.count {
                         Text(L10n.logsRenderTruncated_fmt.formatted(visible.count))
-                            .font(Theme.Typography.caption)   // #471: B9 — was: .font(.caption2)
+                            .font(Theme.Typography.caption)
                             .foregroundStyle(Theme.Palette.textTertiary)
                     }
                     Text(LogRendering.attributed(visible))
-                        // #471: B9 — the log body is the canonical step-6 case, but
-                        // it was drawn at `.caption2`, the seventh step Theme
-                        // abolished. Same mono face, now on the scale.
-                        // #471 was: .font(.system(.caption2, design: .monospaced))
                         .font(Theme.Typography.mono)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)

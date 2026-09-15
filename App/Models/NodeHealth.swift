@@ -74,6 +74,72 @@ enum HealthPolicy {
     static let maxEntries:        Int = 200
 }
 
+// MARK: - HostSnapshot
+//
+// The last known, NON-SECRET state of a server host, persisted so the Servers
+// tab can show it the instant it appears instead of flashing "stopped" or
+// "checking" and re-reading every host over SSH. No credentials, no addresses:
+// the base state, the machine numbers already rendered as strings, and when
+// they were read. Keyed by ServerHost.id.
+
+/// Persisted mirror of `HostBase` (which itself is UI-facing and not Codable).
+enum HostSnapshotBase: String, Codable, Sendable {
+    case unknown, noPodman, noImage, imageReady, stopped, running
+}
+
+struct HostSnapshot: Codable, Equatable, Sendable {
+    var base: HostSnapshotBase
+    /// When the probe that produced `base` finished.
+    var probedAt: Date
+    /// Disk / RAM / uptime as last read (`SSHRunner.VPSStats` fields), nil when unread.
+    var disk: String? = nil
+    var ram: String? = nil
+    var uptime: String? = nil
+    /// Last TCP ping to the SSH port, milliseconds; nil when it failed or was not measured.
+    var pingMs: Double? = nil
+    /// The protocol rows as last LISTED over SSH (`SSHRunner.CarrierInfo`
+    /// minus nothing secret — see `HostSnapshotCarrier`), and when. nil when
+    /// the listing never succeeded; decodes as nil from pre-round-2 data.
+    /// Lets a cold start draw the rows from memory instead of an "unread"
+    /// note that waits on an SSH round-trip. The card still marks the listing
+    /// as a snapshot until the session's first read lands.
+    var carriers: [HostSnapshotCarrier]? = nil
+    var carriersReadAt: Date? = nil
+}
+
+/// Persisted mirror of one protocol row (`SSHRunner.CarrierInfo`): the config
+/// file name, carrier, transport, room id, container name, the raw `podman ps`
+/// status text and the primary flag. No credential and no host address — the
+/// room id is the same identifier `ConnectionStore` already persists per record.
+struct HostSnapshotCarrier: Codable, Equatable, Sendable {
+    var file: String
+    var provider: String
+    var transport: String
+    var room: String
+    var container: String
+    /// Raw status as `podman ps --format "{{.Status}}"` printed it; re-parsed
+    /// with `ContainerStatus.parse(from:)` ("" ⇒ not found).
+    var status: String
+    var isPrimary: Bool
+}
+
+enum HostSnapshotPolicy {
+    /// A host probed this recently is not re-probed on tab entry unless the
+    /// user pulls to refresh or acts on it explicitly.
+    static let recheckSeconds: TimeInterval = 60
+    /// Snapshots older than this are dropped on load — a week-old "running" is
+    /// not worth showing as a starting point.
+    static let forgetSeconds: TimeInterval = 7 * 24 * 3600
+
+    /// Pure throttle rule: probe when forced, when nothing is known, or when
+    /// the last probe is at least `recheckSeconds` old.
+    static func shouldRecheck(lastProbedAt: Date?, force: Bool, now: Date) -> Bool {
+        if force { return true }
+        guard let last = lastProbedAt else { return true }
+        return now.timeIntervalSince(last) >= recheckSeconds
+    }
+}
+
 /// #456: the ONE thing views render. Derived, never stored.
 enum HealthDisplay: Equatable, Sendable {
     case never                                            // no probe on record
@@ -182,6 +248,43 @@ enum HealthDisplay: Equatable, Sendable {
     }
     // eoc #459
 
+    /// The redesigned chip's two channels (App/UI/HealthChip.swift): one
+    /// PRIMARY line in the regular caption face — the value or the verdict word
+    /// ("146 ms", "Key no longer matches", "Not checked") — and an optional
+    /// SECONDARY age in the compact form ("now", "5m"), drawn smaller and in
+    /// the tertiary colour. Neither line is a sentence, so neither takes
+    /// `HealthAge.phrase`; the dot beside them carries the tone.
+    /// `.verified` and `.fading` still differ by WORD, not colour alone: a
+    /// present-tense "146 ms" against a past-tense "was 146 ms".
+    /// `chipLabel` above stays as the one-line form other callers pin.
+    var chipText: HealthChipText {
+        switch self {
+        case .never:
+            return HealthChipText(primary: L10n.healthChipNotChecked.localized())
+        case .checking:
+            return HealthChipText(primary: L10n.healthChecking.localized())
+        case .verified(let ms, let age):
+            let primary = ms.map { L10n.healthLatencyMs_fmt.formatted($0) }
+                ?? L10n.healthVerified.localized()
+            return HealthChipText(primary: primary, secondary: HealthAge.short(age))
+        case .fading(let ms, let age):
+            let primary = ms.map { L10n.healthChipWas_fmt.formatted(L10n.healthLatencyMs_fmt.formatted($0)) }
+                ?? L10n.healthFading.localized()
+            return HealthChipText(primary: primary, secondary: HealthAge.short(age))
+        case .handshakeOnly(let age):
+            return HealthChipText(primary: L10n.healthChipNoData.localized(),
+                                  secondary: HealthAge.short(age))
+        case .broken(let r, let age), .inconclusive(let r, let age):
+            // The reason's short headline ("Server didn't answer", "Key no
+            // longer matches"): the dot's tone — red vs grey — says whether it
+            // is a verdict about the node or an admission that we could not check.
+            return HealthChipText(primary: r.headline, secondary: HealthAge.short(age))
+        case .stale(let age):
+            return HealthChipText(primary: L10n.healthStale.localized(),
+                                  secondary: HealthAge.short(age))
+        }
+    }
+
     /// What the user should DO next; nil when there is nothing to offer.
     var suggestedAction: HealthAction? {
         switch self {
@@ -190,6 +293,14 @@ enum HealthDisplay: Equatable, Sendable {
         default:                                         return nil
         }
     }
+}
+
+/// The two lines of the health chip. Plain strings, localised at the point of
+/// use (never cached — AGENTS.md); `secondary` is nil when there is no age to
+/// date the primary line with (`.never`, `.checking`).
+struct HealthChipText: Equatable, Sendable {
+    var primary: String
+    var secondary: String? = nil
 }
 
 /// #456: compact relative age. Pure → unit-tested.

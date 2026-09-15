@@ -58,6 +58,12 @@ struct ServerHost: Identifiable, Codable, Equatable, Hashable {
     /// authMethod (#451).
     var extraConnectionIDs: [UUID]? = nil
 
+    /// Whether this host produced (and therefore manages) the given
+    /// connection record — primary install or a sibling carrier.
+    func links(_ recordID: UUID) -> Bool {
+        lastConnectionID == recordID || (extraConnectionIDs ?? []).contains(recordID)
+    }
+
     // #295: per-server container logs are stored as `<logFilePrefix>_container.log`.
     // Sanitises `label` into a filesystem-safe prefix: alphanumerics are kept,
     // everything else (spaces, punctuation, non-ASCII) collapses to a single

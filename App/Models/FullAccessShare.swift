@@ -1,49 +1,42 @@
 import Foundation
 
-// MARK: - FullAccessShare (#135)
+// MARK: - FullAccessShare
 //
-// PROPOSED wire format for the opt-in "full access" connection share — the
-// co-admin variant that conveys BOTH the connection URI and the VPS SSH
-// credentials so the recipient can MANAGE the server (install / reconfigure /
-// reboot / uninstall), not merely connect through it.
+// Wire format for the opt-in "full access" share — the co-admin variant that
+// conveys BOTH the connection URI and the VPS SSH credentials so the recipient
+// can MANAGE the server (install / reconfigure / reboot / uninstall), not
+// merely connect through it.
 //
-// ⚠️ STATUS: PROPOSAL (#135). This is a new wire format and a security surface;
-// the exact framing is an operator decision. The UI, the destructive-style
-// warning, and this documented payload are implemented; the byte format below
-// is a proposal pending sign-off. Keep `formatVersion` so a future change can
-// be detected and migrated/rejected rather than silently misparsed.
-//
-// FORMAT (#366: use the familiar olcrtc:// scheme, not a new olcrtc-host:// one)
+// FORMAT
 // ------
 //   olcrtc://host/v1/<base64url(JSON)>
 //
-// where JSON is this struct, Codable-encoded. Base64url (no padding) keeps the
-// blob URL-safe for the system share sheet / clipboard. It reuses the already-
-// registered `olcrtc://` scheme with a distinguishing `host/` authority+path so
-// no new URL scheme must be registered and a recipient's handler can still tell
-// it apart from a plain connection URI (which is `olcrtc://<carrier>?<transport>@…`
-// — it always has a `?` and never a `/v1/` path). The `v1` segment mirrors
-// `formatVersion` so a parser can reject an unknown version before decoding. The
-// payload carries the connection `uri` (the same `olcrtc://` string the URI-only
-// share produces) PLUS the SSH host/port/username/password.
+// JSON is this struct, Codable-encoded. Base64url (no padding) keeps the blob
+// URL-safe for the system share sheet / clipboard. It reuses the registered
+// `olcrtc://` scheme with a distinguishing `host/` authority+path, so a
+// recipient's handler can tell it apart from a plain connection URI (which is
+// `olcrtc://<carrier>?<transport>@…` — always a `?`, never a `/v1/` path). The
+// `v1` segment mirrors `formatVersion` so a parser can reject an unknown
+// version before decoding.
+//
+// The payload carries the connection `uri` PLUS the SSH host/port/username and
+// ONE credential: `sshPassword` for password hosts, or `sshPrivateKey`
+// (+ optional `sshKeyPassphrase`) for key hosts. The key fields are optional
+// and absent from the JSON of a password host, so a v1 link produced before
+// key hosts could be shared decodes unchanged, and an old reader that ignores
+// unknown fields still gets a valid password payload.
 //
 // SECURITY
 // --------
-//   • Opt-in only, behind an explicit destructive-style warning in the UI.
-//   • The SSH password is read live from the Keychain (ServerHostStore /
+//   • Opt-in only, behind an explicit confirmation that names the secret the
+//     link contains (password or the full private key).
+//   • The credential is read live from the Keychain (ServerHostStore /
 //     KeychainHelper) at share time — never persisted into UserDefaults.
-//   • This blob MUST NOT be logged: callers log the *action*, never the payload,
-//     and `LogStore.redactSecrets` already scrubs the embedded `olcrtc://#key`.
-//     The SSH password has no such on-the-wire redaction, which is exactly why
-//     sharing is gated behind the warning — anyone with the link controls the
-//     VPS.
-//   • #451: PASSWORD hosts only. A key-auth host (ServerHost.authMethod ==
-//     .privateKey) is never shared this way — the link would have to embed the
-//     private key (bigger blast radius than a per-host password, likely beyond
-//     QR capacity, and keys are commonly reused across hosts). The producer
-//     (ServersView.fullAccessRequest) returns nil for key hosts and the menu
-//     item explains; this format deliberately has NO private-key field so a
-//     future caller can't quietly start embedding one.
+//   • This blob MUST NOT be logged: callers log the *action*, never the payload.
+//   • A private key is a bigger blast radius than a per-host password and is
+//     often reused across hosts; the confirmation copy says so. A key payload
+//     is also usually too large for a QR code — the share sheet offers Copy /
+//     Share for it, not QR.
 
 struct FullAccessShare: Codable, Equatable {
     /// Bumped if the JSON shape changes; also encoded in the URL authority so a
@@ -54,12 +47,28 @@ struct FullAccessShare: Codable, Equatable {
     /// lets the recipient connect immediately, not just manage the VPS.
     var uri: String
 
-    // SSH access to the VPS (ServerHost fields + the Keychain password).
+    // SSH access to the VPS (ServerHost fields + ONE Keychain credential).
     var label: String
     var sshHost: String
     var sshPort: Int
     var sshUsername: String
+    /// Password hosts: the password. Key hosts: "" (the key fields carry the secret).
     var sshPassword: String
+    /// Key hosts only: the full OpenSSH private-key text. nil for password hosts.
+    var sshPrivateKey: String? = nil
+    /// Key hosts only: the passphrase of an encrypted key. nil when unencrypted.
+    var sshKeyPassphrase: String? = nil
+
+    /// True when the payload authenticates with a private key.
+    var isKeyAuth: Bool { !(sshPrivateKey ?? "").isEmpty }
+
+    /// The stored credential as the SSHSecret the recipient should save.
+    var secret: SSHSecret {
+        if let key = sshPrivateKey, !key.isEmpty {
+            return .privateKey(text: key, passphrase: (sshKeyPassphrase?.isEmpty == false) ? sshKeyPassphrase : nil)
+        }
+        return .password(sshPassword)
+    }
 
     // #366 was: scheme = "olcrtc-host". Reuse the registered `olcrtc://` scheme
     // with a `host/` authority so no new URL scheme must be registered; the

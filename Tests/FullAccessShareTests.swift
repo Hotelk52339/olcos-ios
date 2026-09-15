@@ -27,6 +27,53 @@ final class FullAccessShareTests: XCTestCase {
         XCTAssertEqual(parsed, original)
     }
 
+    private func keySample() -> FullAccessShare {
+        var share = sample()
+        share.sshPassword = ""
+        share.sshPrivateKey = "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA\n-----END OPENSSH PRIVATE KEY-----\n"
+        share.sshKeyPassphrase = "pass phrase"
+        return share
+    }
+
+    // A key-auth host embeds the private key the way a password host embeds
+    // the password; the secret comes back typed.
+    func testKeyPayloadRoundTripsAndYieldsKeySecret() throws {
+        let original = keySample()
+        let parsed = try FullAccessShare.parse(try XCTUnwrap(original.encoded()))
+        XCTAssertEqual(parsed, original)
+        XCTAssertTrue(parsed.isKeyAuth)
+        guard case .privateKey(let text, let passphrase) = parsed.secret else {
+            return XCTFail("expected a private-key secret")
+        }
+        XCTAssertEqual(text, original.sshPrivateKey)
+        XCTAssertEqual(passphrase, "pass phrase")
+    }
+
+    // Password hosts encode exactly as before: no key fields appear on the wire.
+    func testPasswordPayloadHasNoKeyFieldsAndYieldsPasswordSecret() throws {
+        let share = sample()
+        let json = try XCTUnwrap(String(data: JSONEncoder().encode(share), encoding: .utf8))
+        XCTAssertFalse(json.contains("sshPrivateKey"))
+        XCTAssertFalse(json.contains("sshKeyPassphrase"))
+        XCTAssertFalse(share.isKeyAuth)
+        guard case .password(let password) = share.secret else {
+            return XCTFail("expected a password secret")
+        }
+        XCTAssertEqual(password, share.sshPassword)
+    }
+
+    // A link made before key support carries no key fields and still parses.
+    func testLegacyPayloadWithoutKeyFieldsParses() throws {
+        let json = """
+        {"formatVersion":1,"uri":"olcrtc://jitsi?datachannel@room#\(String(repeating: "b", count: 64))","label":"L","sshHost":"h","sshPort":22,"sshUsername":"u","sshPassword":"p"}
+        """
+        let blob = FullAccessShare.base64urlEncode(Data(json.utf8))
+        let parsed = try FullAccessShare.parse("olcrtc://host/v1/" + blob)
+        XCTAssertNil(parsed.sshPrivateKey)
+        XCTAssertFalse(parsed.isKeyAuth)
+        XCTAssertEqual(parsed.sshPassword, "p")
+    }
+
     // #366: a full-access link is detected as such; a plain connection URI is not.
     func testDiscriminatorTellsFullAccessFromConnectionURI() throws {
         let link = try XCTUnwrap(sample().encoded())

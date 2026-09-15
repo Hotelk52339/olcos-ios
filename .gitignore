@@ -177,3 +177,4 @@ App/Mobile.xcframework/
 
 # Local editor/tooling context; the project context itself is AGENTS.md
 CLAUDE.md
+App/Localization/.l10n.lock

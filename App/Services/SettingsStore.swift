@@ -113,7 +113,7 @@ final class SettingsStore: ObservableObject {
         // reinstall. (keepAliveSeconds is already 30 = on.)
         static let autoConnectOnLaunch  = true    // #455 was: hardcoded false
         static let backgroundAudio      = true    // #455 was: hardcoded false — keeps the SOCKS port alive in the background
-        static let autoFailover         = true    // #455 was: false — protocol failover on by default
+        static let autoFailover         = false   // automatic protocol switching stays opt-in (no Settings UI; the stored key is kept)
         // #458: check servers and protocols when the app is opened. ON by default —
         // the user should not have to ask the app what is true; the probes are
         // debounced (nothing re-checked inside HealthPolicy.minRecheckSeconds).

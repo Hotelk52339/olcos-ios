@@ -1,40 +1,34 @@
 import SwiftUI
 
-// MARK: - ConnectionsView — the Connect tab (#457, restructured #459)
+// MARK: - ConnectionsView — the Connect tab
 //
 // JOB: state the truth about the tunnel right now, and offer the ONE action that
-// changes it. Nothing is drawn that cannot be dated.
+// changes it. Nothing is drawn that cannot be dated or measured.
 //
 // Top to bottom:
-//   1. ConnectHero          — the state as the largest text on the screen, WHICH
-//                             SERVICE the traffic hides inside (#461), one line
-//                             of dated evidence, the scope, one labelled button,
-//                             and that connection's action menu.
+//   1. ConnectHero          — the state as the largest text on the screen, one
+//                             line of dated evidence, the waveform breathing
+//                             with measured throughput and its ↓/↑ readout, one
+//                             labelled button, then the active connection
+//                             summary (service · transport · host · VPN/SOCKS5
+//                             mode) with that connection's action menu.
 //   2. Switch protocol      — one row per OTHER connection: carrier · transport,
-//                             one `OlcHealthChip`, and (#471) the host label only
-//                             when the list spans more than one host.
-//                             TAP = connect.
-//   3. Auto-switch          — #460: the failover switch, moved off the Settings
-//                             tab to sit with the protocols it switches between;
-//                             #461: now BELOW the list it governs; #471: drawn
-//                             only when there are two connections to switch
-//                             between, and mirrored in Settings for everyone else.
-//   4. Diagnostics          — "This session" (protocol / exit / latency, only
-//                             while connected) + "Checks" (IP check, speed
-//                             test). See HealthCard.swift.
+//                             one `OlcHealthChip`, and the host label only when
+//                             the list spans more than one host. TAP = connect.
+//   3. Diagnostics          — "This session" (exit / latency, only while
+//                             connected) + "Checks" (IP check, speed test).
+//                             See HealthCard.swift.
 //
-// #461: THAT ORDER IS THE CHANGE. Readouts may not stand between the user and
-// the switcher — see `connectionList` for the rule and where it comes from.
+// Readouts never stand between the user and the switcher; the hero's own
+// readout is one quiet line. Protocol failover (`SettingsStore.autoFailover`)
+// is configured in Settings only; its engine in TunnelManager is inert while
+// the setting is off.
 //
-// #459: THE ONE STRUCTURAL DECISION — the hero's subject is NOT in the list.
+// THE ONE STRUCTURAL DECISION — the hero's subject is NOT in the list.
 // `heroSubjectID` (the live node while a session is up, else `store.primary`) is
 // skipped when the rows are drawn, so a connection's name appears exactly once
-// on this screen. That answers both halves of the owner's complaint: the
-// duplication between the hero and the rows is gone BY CONSTRUCTION, and "which
-// one is selected?" is answered by POSITION and CONTAINER — the selected node is
-// the big card at the top, the one with the button in it. That is the only
-// selection marker; no accent bar, no badge, no new vocabulary. (The existing
-// `auroraVerdictRing` is a VERDICT mark, not a selection mark.)
+// on this screen. "Which one is selected?" is answered by POSITION and
+// CONTAINER — the selected node is the card at the top with the button in it.
 //
 // The filtering happens at RENDER time, not in `recompute()`: keeping `groups`
 // whole means `groupHeader`'s failing count and `groupFooter`'s subscription
@@ -42,31 +36,19 @@ import SwiftUI
 // hero's subject renders as an empty `Section` rather than silently dropping its
 // quota footer.
 //
-// #461 was: "#459: DIAGNOSTICS MOVED ABOVE THE LIST … so the switcher goes
-// last." That order is inverted now — the switcher is second and Diagnostics is
-// LAST, below the auto-switch card. See `connectionList` for the rule that put
-// it there. (#457's note about a future pushed "Check & why" screen stays
-// retired: Diagnostics is the ONE card, having absorbed the old `HealthCard`.)
-//
-// #459: PULL TO REFRESH replaces the per-group "Verify all" button. See
+// PULL TO REFRESH replaces any per-group "Verify all" button. See
 // `refreshEverything()`.
 //
-// #457 (structure) was: hero → diagnostics → servers, with `.navigationTitle("OlcRTC")`
-// above it all. A 34 pt brand name carrying no information sat over a 15 pt
-// status pill, and three always-rendered buttons that show nothing until pressed
-// held the second-best position on the app's most-used screen. The brand name is
-// gone (inline title), the answer is the largest thing here, and diagnostics sit
-// under the content they are about.
-//
-// #457 (surgery discipline): this file had already hit the SwiftUI type-checker's
-// expression budget twice. Every change is by EXTRACTION — the hero lives in
+// Surgery discipline: this file has hit the SwiftUI type-checker's expression
+// budget twice. Every change is by EXTRACTION — the hero lives in
 // ConnectHero.swift, the row in ConnectionRowView.swift, the diagnostics card in
-// HealthCard.swift, and the List's modifiers are split across two small wrapper
-// functions. Nothing here has a `body` over ~20 lines or a chain over ~8.
+// HealthCard.swift, throughput sampling in TunnelThroughput.swift, and the
+// List's modifiers are split across small wrapper functions. Nothing here has a
+// `body` over ~20 lines or a chain over ~8.
 //
-// #456: the row verdicts are `HealthCoordinator`'s persisted, timestamped
-// evidence. Green means an HTTP 2xx came back through that node's OWN SOCKS
-// listener, minutes ago — not "we ran something once".
+// The row verdicts are `HealthCoordinator`'s persisted, timestamped evidence.
+// Green means an HTTP 2xx came back through that node's OWN SOCKS listener,
+// minutes ago — not "we ran something once".
 
 struct ConnectionsView: View {
     @ObservedObject var store   : ConnectionStore
@@ -76,6 +58,9 @@ struct ConnectionsView: View {
     /// #361: routes a subscription pasted into the AddConnection import box (an
     /// https URL or raw sub.md body) up to MainTabView's confirm-then-import flow.
     var onPasteImport: ((OlcrtcSubscription.ImportInput) -> Void)? = nil
+    /// IDs of records some saved server produced; anything else was imported
+    /// from another device and cannot be repaired from the Servers tab here.
+    var linkedRecordIDs: Set<UUID> = []
 
     // #337: observe the screenshot-safe toggle so IP displays re-mask live.
     // #457: also the source of `tunnelMode` for the hero's permanent scope line.
@@ -95,6 +80,10 @@ struct ConnectionsView: View {
     @State private var isVisible = false
     @State private var hapticPolicy = SignalHapticPolicy()
     // eoc #486
+
+    /// Polls tunnel byte counters ~1/s for the hero — only while connected, on
+    /// screen, uncovered and in the foreground (`syncThroughput`).
+    @StateObject private var throughput = TunnelThroughputMonitor()
 
     /// #403: per-group subscription metadata, cached — `body` re-evaluates ~10×/s
     /// during a speed test and must not recompute it.
@@ -158,23 +147,27 @@ struct ConnectionsView: View {
             isVisible = true
             Haptics.prepare()
             entrySweep()
+            syncThroughput()
         }
         .onDisappear {
             isVisible = false
             hapticPolicy.cancel()
+            throughput.stop()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { hapticPolicy.cancel() }
             else if isVisible { Haptics.prepare() }
+            syncThroughput()
         }
         .onChange(of: activeSheet?.id) { _, id in
             if id != nil { hapticPolicy.cancel() }
             else if isVisible { Haptics.prepare() }
+            syncThroughput()
         }
         // eoc #486
         // #484: same-state record/mode replacement also invalidates diagnostics.
         .onChange(of: tunnel.connectedRecord?.id) { _, _ in invalidateDiagnostics() }
-        .onChange(of: tunnel.activeMode) { _, _ in invalidateDiagnostics() }
+        .onChange(of: tunnel.activeMode) { _, _ in invalidateDiagnostics(); syncThroughput() }
         // #469 was: `.onDisappear { health.cancelAll() }` — see ServersView: the
         // two tabs verify the SAME records through ONE coordinator, and a tab
         // switch fires the new tab's onAppear and the old one's onDisappear in
@@ -182,48 +175,17 @@ struct ConnectionsView: View {
         // first probe. "Check on opening" silently did nothing on a switch.
     }
 
-    // boc #461
-    /// #461: ONE PAGE, and the rule that decides what may be on the first
-    /// screenful of it — the owner's complaint 6 ("combine the first tab into
-    /// one full screen, like IVPN; go and LOOK at how their first page is
-    /// implemented").
-    ///
-    /// IVPN's main screen is a map with a two-anchor FloatingPanel over it. The
-    /// resting anchor is `274 - bottomSafeArea` points tall and their own
-    /// `heightForRowAt` says exactly what fits in it: row 0 = the state word +
-    /// the connect switch (100 pt), row 1 = multi-hop (44 pt), row 2 = the
-    /// server row that pushes a picker (85 pt). 100 + 44 + 85 = 229, which with
-    /// the grabber IS the 274. Everything else — AntiTracker, the network row,
-    /// the PROTOCOL row, and the 230 pt IP/location block — is below the fold,
-    /// reachable only by dragging the panel to `.full`.
-    ///
-    /// We have no map and add no third-party panel library, so the honest
-    /// equivalent is a single scrolling List whose first screenful holds only
-    /// things you can act on:
-    ///
-    ///     NOTHING BELOW THE PRIMARY BUTTON ON THE FIRST SCREENFUL MAY BE A
-    ///     READOUT. Everything there is the answer, the control, or the switcher.
-    ///
-    /// #461 was: hero → Diagnostics → auto-switch → the switcher. The technical
-    /// readouts sat between the user and the list of protocols they came to
-    /// change, and the rule governing that list sat above the list itself. Not
-    /// one of the four clients read for this change (IVPN, Mullvad, Amnezia,
-    /// Windscribe) puts its readouts above its switcher; three of them hide them
-    /// behind a disclosure or below a drag. Diagnostics now starts at roughly
-    /// y = 700–900 in every configuration — one deliberate scroll, exactly where
-    /// Mullvad's chevron and IVPN's `.full` drag put it.
-    ///
-    /// #459 was: `HealthCard` sat between the hero and the list, and Diagnostics
-    /// sat under the list. Both reported latency; only one of them could date it.
+    /// ONE PAGE. The first screenful holds only things you can act on: the
+    /// answer, the control, and the switcher. Diagnostics — the readouts — sit
+    /// one deliberate scroll down, where IVPN's `.full` drag and Mullvad's
+    /// chevron put theirs.
     private var connectionList: some View {
         List {
-            Section { heroBlock }   // 1. the answer + the one action
+            Section { heroBlock }   // 1. the answer, the action, the active connection
             connectionsSection      // 2. the switcher
-            autoSwitchSection       // 3. the rule that governs the switcher
-            diagnosticsSection      // 4. the readouts
+            diagnosticsSection      // 3. the readouts
         }
     }
-    // eoc #461
 
     private func listChrome(_ content: some View) -> some View {
         content
@@ -297,8 +259,7 @@ struct ConnectionsView: View {
                     health: heroSubject.map { health.display(for: $0.id) } ?? HealthDisplay.never,
                     exitFlag: exitFlag,
                     exitPlace: exitPlace,
-                    exitMeasuredAt: ipCheck.exitGeoAt, // #486: not the view's appearance date.
-                    // #486 was: connected ? activeMode : settings.tunnelMode.
+                    exitMeasuredAt: ipCheck.exitGeoAt, // the measurement date, not the view's
                     // Setup/recovery keep their captured backend; idle scope
                     // previews the same effective mode that connect() will use.
                     mode: heroMode,
@@ -306,22 +267,21 @@ struct ConnectionsView: View {
                     secretsLocked: store.secretsLocked,
                     isPresented: isVisible && activeSheet == nil,
                     modeFallbackReason: heroMode == .proxy ? tunnel.automaticModeFallbackReason : nil,
-                    // #459: the subject has no row any more, so it carries the
-                    // row's own action set — the SAME builder, not a copy.
+                    isManagedHere: heroSubject.map { linkedRecordIDs.contains($0.id) } ?? true,
+                    throughput: throughput.reading,
+                    waveIntensity: throughput.intensity,
+                    // The subject has no row, so it carries the row's own action
+                    // set — the SAME builder, not a copy.
                     menuItems: heroSubject.map { rowMenuItems($0) } ?? [],
                     onConnect: { heroConnect() },
                     onDisconnect: { heroDisconnect() })
-            // boc #486
-            // #486 was: .olcCardRow() wrapping another full hero card. Signal
-            // sits on the page ground; only the connection identity is a plate.
+            // Signal sits on the page ground; only the connection summary is a plate.
             .listRowInsets(EdgeInsets(top: 0, leading: Theme.Metrics.s4,
                                      bottom: Theme.Metrics.s2, trailing: Theme.Metrics.s4))
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-            // eoc #486
     }
 
-    // boc #486
     private var heroMode: TunnelMode {
         switch tunnel.state {
         case .connected, .connecting, .waitingForNetwork: return tunnel.activeMode
@@ -329,7 +289,17 @@ struct ConnectionsView: View {
         case .disconnected, .failed: return tunnel.effectiveModeForNextConnection
         }
     }
-    // eoc #486
+
+    /// The throughput monitor runs only while there is something to measure and
+    /// someone to see it. Every input change funnels through here; anything
+    /// else stops the loop and clears the reading.
+    private func syncThroughput() {
+        throughput.update(isConnected: tunnel.state.isConnected,
+                          isOnScreen: isVisible && activeSheet == nil,
+                          sceneIsActive: scenePhase == .active,
+                          mode: tunnel.activeMode,
+                          vpn: tunnel.vpn)
+    }
 
     /// #456: the record the hero describes — the LIVE node while a session is up
     /// (never `store.primary`, which a row tap used to move without reconnecting),
@@ -381,6 +351,7 @@ struct ConnectionsView: View {
         // #486 was: every connected/failed transition fired success/error,
         // including automatic recovery, launch adoption and off-screen changes.
         resolveUserOutcome()
+        syncThroughput()
         if new.isConnected {
             Task { await ipCheck.refreshExitGeo(via: currentMode) }
         } else {
@@ -439,42 +410,7 @@ struct ConnectionsView: View {
     }
     // eoc #484
 
-    // MARK: 3. Auto-switch — the setting that lives with its subject (#460)
-    //
-    // #461 was: "MARK: 2b". The four MARKs in this file read 1 / 2b / 3 / 2 and
-    // matched neither each other nor the render order; they are numbered by the
-    // order `connectionList` builds now.
-
-    // boc #460
-    /// #460 (instruction 26): `SettingsStore.autoFailover` had UI only in
-    /// Settings, several screens away from the protocols it switches between.
-    /// The rule it encodes — "if Telemost dies and Jitsi works, move over" — is
-    /// about THIS list, so the control sits directly above it. Same stored
-    /// value, one place: this is a move, not a second setting.
-    ///
-    /// Shown only with something to switch BETWEEN. Failover picks another
-    /// protocol on the same server, so with a single connection the control
-    /// would govern nothing; the moment a second one exists it appears.
-    @ViewBuilder
-    private var autoSwitchSection: some View {
-        // #471 was: `if !store.connections.isEmpty`, so a one-connection install
-        // got a card holding a switch that governs nothing plus a caption saying
-        // so. A control with no subject does not belong on the app's first
-        // screen. #460's reason for widening the gate — that removing it from
-        // Settings left the setting unreachable — is answered where it belongs:
-        // the same stored value is bound again in Settings › Staying connected,
-        // one value with two honest entry points (Wi-Fi in Control Center and in
-        // Settings). #460 (audit fix) was, in turn: `count > 1`.
-        if store.connections.count > 1 {
-            Section {
-                ConnectAutoSwitchCard()
-                    .olcCardRow()
-            }
-        }
-    }
-    // eoc #460
-
-    // MARK: 2. The connection list — the switcher (#461 was: "MARK: 3")
+    // MARK: 2. The connection list — the switcher
 
     @ViewBuilder
     private var connectionsSection: some View {
@@ -614,7 +550,7 @@ struct ConnectionsView: View {
     /// blank because its own name ("Connections") repeated the tab it sits in.
     /// #461: the header names the SUBJECT of the choice ("Switch protocol"), not
     /// a bare preposition — "Switch to" ran straight into the row under it and
-    /// read as "Switch to — zaza". #461 was: `connectListOtherHeader` = "Switch to".
+    /// read as "Switch to — ams-1". #461 was: `connectListOtherHeader` = "Switch to".
     ///
     /// #459 was: `groupHealthControl` — a per-group "Verify all" button plus its
     /// spinner, sitting in a section header. Pull-to-refresh replaces it, checks
@@ -665,18 +601,14 @@ struct ConnectionsView: View {
         }
     }
 
-    // MARK: 4. Diagnostics — the ONE card (defined in HealthCard.swift)
-    // #461 was: "MARK: 2", from the pass that put this above the list.
+    // MARK: 3. Diagnostics — the ONE card (defined in HealthCard.swift)
 
-    /// #459: merged with the old `HealthCard` — `Diagnostics` is the name that
-    /// survives. #461: and moved to LAST, below the switcher and the rule that
-    /// governs it, because readouts may not stand between the user and the list
-    /// of protocols they came to change (`connectionList`).
+    /// LAST, below the switcher: readouts may not stand between the user and
+    /// the list of protocols they came to change (`connectionList`). The
+    /// carrier-endpoints tool is an action ON A CONNECTION and lives in
+    /// `rowMenuItems`.
     private var diagnosticsSection: some View {
         Section {
-            // #461 was: also `carrierParams: activeOlcrtcParams` and
-            // `onCarrierEndpoints:`. The carrier-endpoints tool is an action ON
-            // A CONNECTION, so it moved into `rowMenuItems` — see there.
             DiagnosticsCard(record: tunnel.connectedRecord,
                             ipCheck: ipCheck, speed: speed,
                             mode: currentMode, maskIPs: settings.maskIPs,
@@ -689,14 +621,6 @@ struct ConnectionsView: View {
             Text(L10n.diagnosticsTitle.localized())
         }
     }
-
-    // boc #461
-    // #461 was: `activeOlcrtcParams` — the live node's params, fed to
-    // `DiagnosticsCard.carrierParams`. `rowMenuItems` reads the params off the
-    // record it is already given and checks it against
-    // `tunnel.connectedRecord?.id`, so the derived property has no second
-    // reader; deleting it is what makes the carrier row a MOVE, not a copy.
-    // eoc #461
 
     /// #285: pass the LIVE carrier/transport into the speed test so the header logs
     /// the connection type and the datachannel hint can fire.
@@ -790,15 +714,14 @@ struct ConnectionsView: View {
     private func sheetContent(_ sheet: ConnectionSheet) -> some View {
         switch sheet {
         case .add:
-            AddConnectionView(existingGroups: store.allGroupNames,
-                              onImport: { input in
-                                  activeSheet = nil   // #361: hand off to the confirm flow
-                                  onPasteImport?(input)
-                              }) {
+            AddConnectionView(onImport: { input in
+                activeSheet = nil   // hand off to the subscription confirm flow
+                onPasteImport?(input)
+            }) {
                 store.add($0)
             }
         case .edit(let conn):
-            AddConnectionView(existing: conn, existingGroups: store.allGroupNames) { updated in
+            AddConnectionView(existing: conn) { updated in
                 store.update(updated)
                 // #470: the stored verdict was measured against the OLD
                 // room/key/carrier and kept the same id — the row stayed green
@@ -818,8 +741,8 @@ struct ConnectionsView: View {
 
     private func qrSheet(_ conn: ConnectionRecord) -> some View {
         // #470: service first, host last — the #461 identity rule the hero, the
-        // rows and the Servers card already follow ("Yandex Telemost · zaza").
-        // #470 was: `.navigationTitle(conn.displayName)` ("zaza · Telemost")
+        // rows and the Servers card already follow ("Yandex Telemost · ams-1").
+        // #470 was: `.navigationTitle(conn.displayName)` ("ams-1 · Telemost")
         let title = "\(ConnectionNaming.service(conn.details)) · \(ConnectionNaming.host(conn))"
         return NavigationStack {
             QRCodeView(uri: Self.uriOf(conn))
@@ -927,79 +850,6 @@ struct ConnectionsView: View {
     }
 }
 
-// MARK: - ConnectAutoSwitchCard (#460 — instruction 26)
-//
-// #460: the auto-failover switch, moved here from Settings → RELIABILITY. It
-// binds to `SettingsStore.shared.autoFailover` — the SAME stored value the old
-// Settings row bound to, so nothing about persistence or the failover machinery
-// in `TunnelManager` changes; only where the control is drawn.
-//
-// #471: TITLE, ONE HINT, TOGGLE — three elements, one of them the control.
-//
-// #471 was: "a designed row, not a bare `Toggle` dropped on a card" — a tinted
-// glyph plate (decoration, at a hard-coded 15 pt, one of the two fixed point
-// sizes left in the app), the title, the rule, AND a third `caption2` line
-// "Applies in proxy mode." Three lines of text and an ornament to hold one
-// switch. The proxy-mode condition is a Settings fact
-// (`configFailoverProxyOnlyFooter` keeps its Settings footer); a glyph that
-// repeats the title in pictogram form is not a fact at all.
-//
-// Its own struct with its own `SettingsStore` observation: ConnectionsView's
-// `body` re-evaluates ~10×/s during a speed test and must not grow, and a
-// toggle flip should re-render this card rather than the whole screen.
-
-private struct ConnectAutoSwitchCard: View {
-    @ObservedObject private var settings = SettingsStore.shared
-
-    var body: some View {
-        OlcCard {
-            HStack(alignment: .top, spacing: Theme.Metrics.s3) {
-                labels   // #471 was: `glyph` above this
-                Spacer(minLength: Theme.Metrics.s2)
-                control
-            }
-        }
-    }
-
-    private var labels: some View {
-        VStack(alignment: .leading, spacing: Theme.Metrics.s1) {
-            Text(L10n.configFailoverToggle.localized())
-                .font(Theme.Typography.bodyStrong)   // #471 was: .label
-                .foregroundStyle(Theme.Palette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            // #460: the SHORT explainer. The Settings one
-            // (`configFailoverExplainer`) is a settings-page sentence; this
-            // screen gets the same rule in one line.
-            // #471 was: a third line, `configFailoverProxyOnlyFooter`.
-            Text(L10n.connectAutoSwitchHint.localized())
-                .font(Theme.Typography.caption)
-                .foregroundStyle(Theme.Palette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    /// The label is hidden because `labels` above IS the label; VoiceOver gets it
-    /// back explicitly, with the rule as the hint.
-    private var control: some View {
-        // boc #486
-        // #486 was: Toggle(isOn: $settings.autoFailover) + onChange haptic.
-        // A binding setter is a real user selection; onChange also fires for
-        // programmatic settings restoration and changes in another screen.
-        Toggle("", isOn: Binding(
-            get: { settings.autoFailover },
-            set: { new in
-                guard SignalHapticPolicy.selectionChanged(from: settings.autoFailover, to: new) else { return }
-                settings.autoFailover = new
-                Haptics.tap()
-            }))
-            .labelsHidden()
-            .tint(Theme.Palette.accent)
-            .accessibilityLabel(L10n.configFailoverToggle.localized())
-            .accessibilityHint(L10n.connectAutoSwitchHint.localized())
-        // eoc #486
-    }
-}
-
 // MARK: - SubscriptionMetaFooter (#363, extracted #457)
 //
 // Per-group subscription metadata. Every value is server-provided free text, so
@@ -1069,14 +919,7 @@ private struct SubscriptionMetaFooter: View {
     }
 }
 
-// boc #459
-// #459 was: ConnectDiagnosticsCard and ConnectIPStatus lived here. Both moved
-// into HealthCard.swift, where the old health strip merged into them as the
-// Diagnostics card's "This session" block. A move, not a cut — and this file
-// sheds the ~180 lines the type-checker was carrying for them.
-// eoc #459
-
-// #340: both appearance variants.
+// Both appearance variants.
 #if DEBUG
 #Preview("Connect — Dark") {
     ConnectionsView(store: ConnectionStore(), tunnel: TunnelManager(),

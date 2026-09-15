@@ -1,7 +1,14 @@
-"""#486: Linux-runnable source contracts, NOT an iOS build or runtime test.
+"""Linux-runnable source contracts for the hero / waveform / throughput path.
+NOT an iOS build or runtime test.
 
 Run: python3 -m unittest discover -s Tests -p test_signal_native_486.py -v
-The Swift XCTest file tests policy behavior on the native test target.
+The Swift XCTest files (SignalInteractionPolicyTests, TunnelThroughputTests)
+test policy behavior on the native test target.
+
+Policy pinned here: waveform motion follows MEASURED throughput (exact provider
+counters in VPN mode, a labelled loopback approximation in SOCKS5 mode), is
+connected/visible/foreground-only, static under Reduce Motion, and the view
+itself never owns a timer, a Task or a network call.
 """
 
 from pathlib import Path
@@ -25,8 +32,12 @@ class SignalNativeSourceContracts(unittest.TestCase):
         self.assertNotIn("OlcCard", body)
         self.assertNotIn("auroraVerdictRing", hero)
         self.assertLess(body.index("stateWord"), body.index("SignalWaveform("))
-        self.assertLess(body.index("SignalWaveform("), body.index("subjectPlate"))
-        self.assertLess(body.index("subjectPlate"), body.index("primaryControl"))
+        # Order: state word, waveform, throughput readout, big control, then the
+        # active-connection summary (service · transport · host · mode).
+        self.assertLess(body.index("SignalWaveform("), body.index("throughputReadout"))
+        self.assertLess(body.index("throughputReadout"), body.index("primaryControl"))
+        self.assertLess(body.index("primaryControl"), body.index("subjectPlate"))
+        self.assertIn("intensity: waveIntensity", body)
 
     def test_wave_clock_is_conditionally_mounted_and_cadence_is_bounded(self):
         wave = code("App/Views/SignalWaveform.swift")
@@ -35,10 +46,11 @@ class SignalNativeSourceContracts(unittest.TestCase):
         self.assertIn("framesPerSecond = 30.0", wave)
         self.assertIn("lineCount = 7", wave)
         self.assertIn("sampleCount = 96", wave)
-        self.assertIn("canvas(phase: 0, size: geometry.size, touch: nil)", wave)
+        self.assertIn("canvas(phase: 0, amplitude: staticAmplitude, size: geometry.size, touch: nil)", wave)
         self.assertIn("isConnected && sceneIsActive && !reduceMotion && isVisible", wave)
         for token in ["scenePhase == .active", "reduceMotion: reduceMotion",
-                      "isVisible && isPresented", ".onDisappear { isVisible = false }"]:
+                      "isVisible && isPresented", ".onDisappear { isVisible = false; clock.reset() }",
+                      "clock.advance(to: context.date, target: intensity)"]:
             self.assertIn(token, wave)
         self.assertNotIn("repeatForever", wave)
 
@@ -77,7 +89,7 @@ class SignalNativeSourceContracts(unittest.TestCase):
         for token in [
             "RouteMode.current(isConnected: tunnel.state.isConnected, activeMode: tunnel.activeMode)",
             ".onChange(of: tunnel.connectedRecord?.id) { _, _ in invalidateDiagnostics() }",
-            ".onChange(of: tunnel.activeMode) { _, _ in invalidateDiagnostics() }",
+            ".onChange(of: tunnel.activeMode) { _, _ in invalidateDiagnostics(); syncThroughput() }",
             "ipCheck.invalidateRoute()", "speed.invalidateRoute()",
             ".disabled(tunnel.state.isConnecting || tunnel.state == .waitingForNetwork)",
             "if currentMode.isTunnelled",
@@ -106,7 +118,29 @@ class SignalNativeSourceContracts(unittest.TestCase):
                       "isAutomaticRecovery: tunnel.hasPendingRecovery"]:
             self.assertIn(token, connections)
         self.assertNotIn(".onChange(of: settings.autoFailover)", connections)
-        self.assertIn("SignalHapticPolicy.selectionChanged", connections)
+
+    def test_auto_switch_card_is_gone_from_the_main_screen(self):
+        connections = code("App/Views/ConnectionsView.swift")
+        for forbidden in ["ConnectAutoSwitchCard", "autoSwitchSection", "settings.autoFailover",
+                          "connectAutoSwitchHint"]:
+            self.assertNotIn(forbidden, connections)
+
+    def test_throughput_is_measured_versioned_and_paused_off_screen(self):
+        monitor = code("App/Services/TunnelThroughput.swift")
+        for token in ["pollInterval: Duration = .seconds(1)", "ProviderStats.decode",
+                      "isConnected && isOnScreen && sceneIsActive", "LoopbackCounterReader",
+                      "case .vpn:", "case .proxy:", "reading = nil"]:
+            self.assertIn(token, monitor)
+        provider = code("Tunnel/PacketTunnelProvider.swift")
+        self.assertIn("static let statsVersion = 1", provider)
+        self.assertRegex(provider, r'"v":\s+Self\.statsVersion')
+        controller = code("App/Core/VPNController.swift")
+        self.assertIn("static let version = 1", controller)
+        self.assertIn("stats.v == version else { return nil }", controller)
+        hero = code("App/Views/ConnectHero.swift")
+        self.assertIn("case .estimate", hero)
+        self.assertIn("case .exact", hero)
+        self.assertIn("throughputEstimateA11y_fmt", hero)
 
     def test_generators_are_reused_prepared_soft_and_foreground_guarded(self):
         helper = code("App/UI/DesignSystem.swift").split("enum Haptics", 1)[1].split("struct OlcButton", 1)[0]
